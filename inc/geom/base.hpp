@@ -200,11 +200,13 @@ struct t_vector {
 	inline t_vector() {}
 
 	inline t_vector<T, N> rot(const t_vector<T, N> &center, int i, int j, T angle) const {
-		return this->sub(center).rot(i, j, angle);
+		return this->sub(center).rot(i, j, angle).add(center);
 	}
 
 	inline t_vector<T, N> rot(const t_basis<T, N> &basis, int i, int j, T angle) const {
-		return basis.put(*this).rot(i, j, angle);
+		return basis.get(
+		basis.put(*this).rot(i, j, angle)
+		);
 	}
 
 	inline t_vector<T, N> rot(int i, int j, T angle) const {
