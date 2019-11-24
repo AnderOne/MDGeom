@@ -307,7 +307,7 @@ struct t_basis {
 	//Construct uniform basis:
 	inline t_basis(): top(0) {
 
-		for (int i = 0; i < M + (M < N); ++ i) {
+		for (int i = 0; i < NM; ++ i) {
 			for (int k = i + 1; k < N; ++ k) {
 				vec[i][k] = T(0);
 			}
@@ -320,8 +320,8 @@ struct t_basis {
 
 	/*inline t_basis(...) {
 		//...
-		ort();
 		ext();
+		ort();
 	}*/
 
 	//Project N-d point into basis of M-d subspace:
@@ -367,7 +367,7 @@ private:
 	}
 	//Orthogonalization:
 	inline void ort() {
-		for (int i = 1; i < M; ++ i) {
+		for (int i = 1; i < NM; ++ i) {
 			T s = vec[i];
 			for (int k = 0; k < i; ++ k) {
 				s += vec[k].dot(vec[i]) *
@@ -378,7 +378,8 @@ private:
 		}
 	}
 
-	t_vector<T, N> vec[M + (M < N)];
+	constexpr static int NM = M + (M < N);
+	t_vector<T, N> vec[NM];
 	t_vector<T, N> top;
 };
 
