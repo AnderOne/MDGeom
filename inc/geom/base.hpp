@@ -324,6 +324,22 @@ struct t_basis {
 		ort();
 	}*/
 
+	//Basis transform:
+	template <typename ... TT> inline t_basis rot(TT ... args) const {
+		t_basis ans; ans.top = top.rot(args ...);
+		for (int i = 0; i < NM; ++ i) {
+			ans.vec[i] = top.add(vec[i]).rot(args ...).sub(ans.top);
+		}
+		return ans;
+	}
+	template <typename ... TT> inline t_basis mov(TT ... args) const {
+		t_basis ans;
+		std::copy(vec, vec + NM, ans.vec);
+		ans.top = top.mov(args ...);
+		return ans;
+	}
+
+
 	//Project N-d point into basis of M-d subspace:
 	inline t_vector<T, M> put(const t_vector<T, N> &arg) const {
 		t_vector<T, N> rad = arg.sub(top);
