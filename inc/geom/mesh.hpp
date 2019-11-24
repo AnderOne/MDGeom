@@ -91,21 +91,21 @@ struct t_hand {
 
 	static_assert((N > 0) && (M > 0) && (M < N));
 
-	const std::vector<t_item<M>> &get(const t_grid<N> &grid) {
-		return t_hand<N-1, M>().get(grid.GRID);
+	static const std::vector<t_item<M>> &get(const t_grid<N> &grid) {
+		return t_hand<N-1, M>::get(grid.GRID);
 	}
-	std::vector<t_item<M>> &get(t_grid<N> &grid) {
-		return t_hand<N-1, M>().get(grid.GRID);
+	static std::vector<t_item<M>> &get(t_grid<N> &grid) {
+		return t_hand<N-1, M>::get(grid.GRID);
 	}
 };
 
 template <unsigned N>
 struct t_hand<N, N> {
 
-	const std::vector<t_item<N>> &get(const t_grid<N> &grid) {
+	static const std::vector<t_item<N>> &get(const t_grid<N> &grid) {
 		return grid.ITEM;
 	}
-	std::vector<t_item<N>> &get(t_grid<N> &grid) {
+	static std::vector<t_item<N>> &get(t_grid<N> &grid) {
 		return grid.ITEM;
 	}
 };
@@ -140,11 +140,11 @@ struct t_grid {
 
 	template <unsigned M>
 	const std::vector<t_item<M>> &get() const {
-		return t_hand<N, M>().get(*this);
+		return t_hand<N, M>::get(*this);
 	}
 	template <unsigned M>
 	std::vector<t_item<M>> &get() {
-		return t_hand<N, M>().get(*this);
+		return t_hand<N, M>::get(*this);
 	}
 
 	std::vector<t_item<N>> ITEM;
