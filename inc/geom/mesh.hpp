@@ -91,6 +91,20 @@ struct t_hand {
 
 	static_assert((N > 0) && (M > 0) && (M < N));
 
+	template <typename ... TT>
+	static t_grid<N> gen(const std::vector<t_item<M>> &item, TT && ... args) {
+		t_grid<N> grid = std::move(t_hand<N, M + 1>::gen(std::forward<TT>(args) ...));
+		t_hand<N, M>::get(grid) = item;
+		return grid;
+	}
+	template <typename ... TT>
+	static t_grid<N> gen(std::vector<t_item<M>> &&item, TT && ... args) {
+		t_grid<N> grid = std::move(t_hand<N, M + 1>::gen(std::forward<TT>(args) ...));
+		t_hand<N, M>::get(grid) =
+		        std::move(item);
+		return grid;
+	}
+
 	static const std::vector<t_item<M>> &get(const t_grid<N> &grid) {
 		return t_hand<N-1, M>::get(grid.GRID);
 	}
@@ -102,6 +116,14 @@ struct t_hand {
 template <unsigned N>
 struct t_hand<N, N> {
 
+	static t_grid<N> gen(const std::vector<t_item<N>> &item) {
+		t_grid<N> grid; grid.ITEM = item; return grid;
+	}
+	static t_grid<N> gen(std::vector<t_item<N>> &&item) {
+		t_grid<N> grid; grid.ITEM = std::move(item);
+		return grid;
+	}
+
 	static const std::vector<t_item<N>> &get(const t_grid<N> &grid) {
 		return grid.ITEM;
 	}
@@ -112,20 +134,6 @@ struct t_hand<N, N> {
 
 template <unsigned N>
 struct t_grid {
-
-	template <typename ... TT>
-	t_grid(const std::vector<t_item<N>> &item, TT && ... args): 
-	       ITEM(item), GRID(std::forward<TT>(args) ...) {}
-
-	template <typename ... TT>
-	t_grid(std::vector<t_item<N>> &&item, TT && ... args): 
-	       ITEM(std::move(item)),
-	       GRID(
-	       std::forward<TT>(args)
-	       ...
-	       ) {}
-
-	t_grid() {}
 
 	std::ostream &print(std::ostream &out) const {
 		GRID.print(out);
@@ -153,13 +161,6 @@ struct t_grid {
 
 template <> struct t_grid<1> {
 
-	t_grid(const std::vector<t_item<1>> &item): ITEM(item) {}
-
-	t_grid(std::vector<t_item<1>> &&item): 
-	       ITEM(std::move(item)) {}
-
-	t_grid() {}
-
 	std::ostream &print(std::ostream &out) const {
 		out << ITEM.size() << "\n";
 		for (const auto &i : ITEM) {
@@ -177,11 +178,16 @@ template <unsigned N>
 struct t_mesh {
 
 	template <typename ... TT> t_mesh(const std::vector<t_vert<N>> &vert, TT && ... args):
-	                           VERT(vert), GRID(std::forward<TT>(args) ...) {}
+	                           VERT(vert),
+	                           GRID(std::move(t_hand<N-1, 1>::gen(
+	                           std::forward<TT>(args) ...
+	                           ))) {}
 
 	template <typename ... TT> t_mesh(std::vector<t_vert<N>> &&vert, TT && ... args):
 	                           VERT(std::move(vert)),
-	                           GRID(std::forward<TT>(args) ...) {}
+	                           GRID(std::move(t_hand<N-1, 1>::gen(
+	                           std::forward<TT>(args) ...
+	                           ))) {}
 
 	t_mesh() {}
 

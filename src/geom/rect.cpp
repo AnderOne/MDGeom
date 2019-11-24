@@ -268,8 +268,8 @@ t_mesh_3d t_rect_4d::cross(const t_slice_3d &slice) const {
 
 	return t_mesh_3d(
 	std::move(VERT),
-	std::move(FACE),
-	std::move(EDGE)
+	std::move(EDGE),
+	std::move(FACE)
 	);
 }
 
