@@ -171,7 +171,7 @@ struct t_matrix {
 	inline T *operator[] (int i) {
 		return dat + i * N;
 	}
-	constexpr int size() const {
+	constexpr unsigned size() const {
 		return N * N;
 	}
 	inline const T *data() const {
@@ -280,7 +280,7 @@ struct t_vector {
 	inline T &operator[] (int i) {
 		return dat[i];
 	}
-	constexpr int size() const {
+	constexpr unsigned size() const {
 		return N;
 	}
 	inline const T *data() const {
@@ -399,26 +399,6 @@ private:
 	t_vector<T, N> top;
 };
 
-template <typename T, unsigned N>
-using t_volume = t_basis<T, N, 3>;
-
-template <typename T, unsigned N>
-using t_plane = t_basis<T, N, 2>;
-
-template <typename T, unsigned N>
-using t_line = t_basis<T, N, 1>;
-
-//...
-
-typedef t_matrix<double, 4>
-t_matrix_4d;
-typedef t_matrix<double, 3>
-t_matrix_3d;
-typedef t_vector<double, 4>
-t_vector_4d;
-typedef t_vector<double, 3>
-t_vector_3d;
-
 //...
 
 #define __DEF_BINARY_2(TYPE, L_TYPE, R_TYPE, S, C)\
@@ -502,5 +482,21 @@ std::ostream &operator<<(std::ostream &out, const t_vector<T, N> &vec) {
 //...
 
 }//BASE
+
+//...
+
+typedef BASE::t_matrix<double, 4> t_matrix_4d;
+typedef BASE::t_matrix<double, 3> t_matrix_3d;
+typedef BASE::t_vector<double, 4> t_vector_4d;
+typedef BASE::t_vector<double, 3> t_vector_3d;
+
+typedef BASE::t_basis<double, 4, 3>
+t_slice_3d;
+typedef BASE::t_basis<double, 4>
+t_space_4d;
+typedef BASE::t_basis<double, 3>
+t_space_3d;
+
+//...
 
 }//GEOM

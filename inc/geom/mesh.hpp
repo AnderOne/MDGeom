@@ -7,39 +7,28 @@
 
 namespace GEOM {
 
-namespace MESH {
-
-typedef BASE::t_basis<double, 4, 3>
-t_slice_3d;
-typedef BASE::t_basis<double, 4>
-t_space_4d;
-typedef BASE::t_basis<double, 3>
-t_space_3d;
-
 using namespace BASE;
 
-template <unsigned N> using t_vert = t_vector<double, N>;
+namespace MESH {
+
+template <typename T, unsigned N> using t_vert = t_vector<T, N>;
 
 template <unsigned N>
 //using t_item = std::array<int, N + 1>;
 struct t_item {
-	template <typename ... TT> t_item(TT ... args):
-	                           ind{args ...} {}
+	template <typename ... TT> t_item(TT ... args): ind{args ...} {}
 
 	std::ostream &print(std::ostream &out) const {
-		out << ind.size();
-		for (int i: ind) out << "\t" << i;
+		out << ind.size(); for (int i: ind) out << "\t" << i;
 		return out;
 	}
-	const auto begin() const {
-		return std::begin(ind);
-	}
-	const auto end() const {
-		return std::end(ind);
-	}
-	size_t size() const {
-		return ind.size();
-	}
+
+	const auto begin() const { return std::begin(ind); }
+
+	const auto end() const { return std::end(ind); }
+
+	size_t size() const { return ind.size(); }
+
 	const auto &operator[](int i) const {
 		return ind[i];
 	}
@@ -51,22 +40,18 @@ private:
 };
 
 template <> struct t_item<1> {
-	template <typename ... TT> t_item(TT ... args):
-	                           ind{args ...} {}
+	template <typename ... TT> t_item(TT ... args): ind{args ...} {}
 
 	std::ostream &print(std::ostream &out) const {
-		out << ind[0] << "\t" << ind[1];
-		return out;
+		return (out << ind[0] << "\t" << ind[1]);
 	}
-	const auto begin() const {
-		return std::begin(ind);
-	}
-	const auto end() const {
-		return std::end(ind);
-	}
-	size_t size() const {
-		return ind.size();
-	}
+
+	const auto begin() const { return std::begin(ind); }
+
+	const auto end() const { return std::end(ind); }
+
+	size_t size() const { return ind.size(); }
+
 	const auto &operator[](int i) const {
 		return ind[i];
 	}
@@ -77,14 +62,12 @@ private:
 	std::array<int, 2> ind;
 };
 
-typedef t_item<1>
-t_edge;
-typedef t_item<2>
-t_face;
-typedef t_item<3>
-t_cell;
+typedef t_item<3> t_cell;
+typedef t_item<2> t_face;
+typedef t_item<1> t_edge;
 
-template <unsigned N> struct t_grid;
+template <unsigned N>
+struct t_grid;
 
 template <unsigned N, unsigned M>
 struct t_hand {
@@ -93,13 +76,15 @@ struct t_hand {
 
 	template <typename ... TT>
 	static t_grid<N> gen(const std::vector<t_item<M>> &item, TT && ... args) {
-		t_grid<N> grid = std::move(t_hand<N, M + 1>::gen(std::forward<TT>(args) ...));
+		t_grid<N> grid = std::move(t_hand<N, M + 1>::
+		          gen(std::forward<TT>(args) ...));
 		t_hand<N, M>::get(grid) = item;
 		return grid;
 	}
 	template <typename ... TT>
 	static t_grid<N> gen(std::vector<t_item<M>> &&item, TT && ... args) {
-		t_grid<N> grid = std::move(t_hand<N, M + 1>::gen(std::forward<TT>(args) ...));
+		t_grid<N> grid = std::move(t_hand<N, M + 1>::
+		          gen(std::forward<TT>(args) ...));
 		t_hand<N, M>::get(grid) =
 		        std::move(item);
 		return grid;
@@ -174,16 +159,19 @@ template <> struct t_grid<1> {
 	std::vector<t_item<1>> ITEM;
 };
 
-template <unsigned N>
+template <typename T, unsigned N>
 struct t_mesh {
 
-	template <typename ... TT> t_mesh(const std::vector<t_vert<N>> &vert, TT && ... args):
+	typedef MESH::t_vert<T, N>
+	t_vert;
+
+	template <typename ... TT> t_mesh(const std::vector<t_vert> &vert, TT && ... args):
 	                           VERT(vert),
 	                           GRID(std::move(t_hand<N-1, 1>::gen(
 	                           std::forward<TT>(args) ...
 	                           ))) {}
 
-	template <typename ... TT> t_mesh(std::vector<t_vert<N>> &&vert, TT && ... args):
+	template <typename ... TT> t_mesh(std::vector<t_vert> &&vert, TT && ... args):
 	                           VERT(std::move(vert)),
 	                           GRID(std::move(t_hand<N-1, 1>::gen(
 	                           std::forward<TT>(args) ...
@@ -192,16 +180,16 @@ struct t_mesh {
 	t_mesh() {}
 
 	//Data transform:
-	void rot(const t_vector<double, N> &center, int xaxis, int yaxis, double angle) {
+	void rot(const t_vector<T, N> &center, int xaxis, int yaxis, T angle) {
 		for (auto &v : VERT) v = v.rot(center, xaxis, yaxis, angle);
 	}
-	void rot(const t_basis<double, N> &basis, int xaxis, int yaxis, double angle) {
+	void rot(const t_basis<T, N> &basis, int xaxis, int yaxis, T angle) {
 		for (auto &v : VERT) v = v.rot(basis, xaxis, yaxis, angle);
 	}
-	void rot(int xaxis, int yaxis, double angle) {
+	void rot(int xaxis, int yaxis, T angle) {
 		for (auto &v : VERT) v = v.rot(xaxis, yaxis, angle);
 	}
-	void mov(const t_vector<double, N> &dir) {
+	void mov(const t_vector<T, N> &dir) {
 		for (auto &v : VERT) v = v.mov(dir);
 	}
 
@@ -216,29 +204,21 @@ struct t_mesh {
 	}
 
 	//Data access:
-	template <unsigned M>
-	const std::vector<t_item<M>> &item() const { return GRID.template get<M>(); }
-	const std::vector<t_vert<N>> &vert() const { return VERT; }
-	const std::vector<t_edge> &edge() const { return item<1>(); }
-	const std::vector<t_face> &face() const { return item<2>(); }
+	template <unsigned M> const std::vector<t_item<M>> &item() const {
+		return GRID.template get<M>();
+	}
 	const std::vector<t_cell> &cell() const { return item<3>(); }
+	const std::vector<t_face> &face() const { return item<2>(); }
+	const std::vector<t_edge> &edge() const { return item<1>(); }
+	const std::vector<t_vert> &vert() const { return VERT; }
 
-	template <unsigned M>
-	const t_item<M> &item(int i) const {
+	template <unsigned M> const t_item<M> &item(int i) const {
 		return GRID.template get<M>()[i];
 	}
-	const t_vert<N> &vert(int i) const {
-		return VERT[i];
-	}
-	const t_edge &edge(int i) const {
-		return item<1>(i);
-	}
-	const t_face &face(int i) const {
-		return item<2>(i);
-	}
-	const t_cell &cell(int i) const {
-		return item<3>(i);
-	}
+	const t_cell &cell(int i) const { return item<3>(i); }
+	const t_face &face(int i) const { return item<2>(i); }
+	const t_edge &edge(int i) const { return item<1>(i); }
+	const t_vert &vert(int i) const { return VERT[i]; }
 
 protected:
 	template <unsigned M> void set(const std::vector<t_item<M>> &it) {
@@ -247,33 +227,36 @@ protected:
 	template <unsigned M> void set(std::vector<t_item<M>> &&it) {
 		GRID.template get<M>() = std::move(it);
 	}
-	void set(const std::vector<t_vert<N>> &vt) {
+	void set(const std::vector<t_vert> &vt) {
 		VERT = vt;
 	}
-	void set(std::vector<t_vert<N>> &&vt) {
+	void set(std::vector<t_vert> &&vt) {
 		VERT = std::move(vt);
 	}
 
 private:
-	std::vector<t_vert<N>> VERT;
+	std::vector<t_vert> VERT;
 	t_grid<N-1> GRID;
 };
 
-typedef t_mesh<3>
-t_mesh_3d;
-typedef t_mesh<4>
-t_mesh_4d;
-
 //...
 
-template <unsigned N>
-std::ostream &operator<<(std::ostream &out, const t_mesh<N> &mesh) {
-	return
-	mesh.print(out);
+template <typename T, unsigned N>
+std::ostream &operator<<(std::ostream &out, const t_mesh<T, N> &mesh) {
+	return mesh.print(out);
 }
 
 //...
 
 }//MESH
-	
+
+//...
+
+typedef MESH::t_mesh<double, 3>
+t_mesh_3d;
+typedef MESH::t_mesh<double, 4>
+t_mesh_4d;
+
+//...
+
 }//GEOM

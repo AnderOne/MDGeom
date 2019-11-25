@@ -2,11 +2,6 @@
 
 namespace GEOM {
 
-using namespace BASE;
-using namespace MESH;
-
-namespace RECT {
-
 t_rect_4d::t_rect_4d(const t_vector_4d &min, const t_vector_4d &max) {
 
 	const std::array<int, 4> zero{0, 0, 0, 0};
@@ -169,7 +164,7 @@ t_mesh_3d t_rect_4d::cross(const t_slice_3d &slice) const {
 		proj[vi] = (vert(vi) - top) * norm;
 	}
 
-	std::vector<MESH::t_vert<3>> VERT;
+	std::vector<t_mesh_3d::t_vert> VERT;
 	std::vector<t_edge> EDGE;
 	std::vector<t_face> FACE;
 
@@ -274,8 +269,6 @@ t_mesh_3d t_rect_4d::cross(const t_slice_3d &slice) const {
 }
 
 //...
-	
-}
 	
 }
 

@@ -1,9 +1,7 @@
 #include <geom/geom.hpp>
 #include <fstream>
 
-using namespace GEOM::BASE;
-using namespace GEOM::MESH;
-using namespace GEOM::RECT;
+using namespace GEOM;
 
 int main() {
 
