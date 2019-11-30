@@ -193,16 +193,6 @@ struct t_mesh {
 		for (auto &v : VERT) v = v.mov(dir);
 	}
 
-	std::ostream &print(std::ostream &out) const {
-		out << VERT.size() << "\n";
-		for (const auto &v : VERT) {
-			out << v << "\n";
-		}
-		out << "\n";
-		GRID.print(out);
-		return out;
-	}
-
 	//Data access:
 	template <unsigned M> const std::vector<t_item<M>> &item() const {
 		return GRID.template get<M>();
@@ -219,6 +209,132 @@ struct t_mesh {
 	const t_face &face(int i) const { return item<2>(i); }
 	const t_edge &edge(int i) const { return item<1>(i); }
 	const t_vert &vert(int i) const { return VERT[i]; }
+
+	std::ostream &print(std::ostream &out) const {
+		out << VERT.size() << "\n";
+		for (const auto &v : VERT) {
+			out << v << "\n";
+		}
+		out << "\n";
+		GRID.print(out);
+		return out;
+	}
+
+	//...
+	template <typename ... F, unsigned M, typename = typename std::enable_if<
+	         ((sizeof ... (F) == 0) && (N == 4) && (M == 3))
+	         >::type>
+	t_mesh<T, M> cross(const t_basis<T, N, M> &slice) const {
+
+		//Check for vertices positions:
+		t_vector<T, N> norm = slice.normal(), top = slice.center();
+		std::vector<T> proj(vert().size());
+		std::vector<typename t_mesh<T, 3>::t_vert> VERT;
+		std::vector<t_edge> EDGE;
+		std::vector<t_face> FACE;
+		for (int vi = 0; vi < vert().size(); ++ vi) {
+			proj[vi] = (vert(vi) - top) * norm;
+		}
+
+		constexpr int null = -1;
+		std::vector<int> VMAP(vert().size(), null);
+		std::vector<int> EMAP(edge().size(), null);
+		std::vector<int> NODE(edge().size(), null);
+		std::vector<int> USED(face().size(), 0);
+
+		//Check for cells:
+		for (int ci = 0; ci < cell().size(); ++ ci) {
+
+			const auto &_cell = cell(ci);
+			std::vector<int> PATH;
+
+			//Check for faces:
+			for (int fi : _cell) {
+
+				const auto &_face = face(fi);
+				int line[2];
+				int fp = 0;
+				int fc = 0;
+
+				//Check for edges:
+				for (int ei : _face) {
+
+					const auto &_edge = edge(ei);
+					int a = _edge[0];
+					int b = _edge[1];
+					const auto &va = vert(a);
+					const auto &vb = vert(b);
+					int ec = 0;
+
+					//Check for vertices:
+					if (proj[a] * proj[b] < 0) {
+						if (NODE[ei] == null) {
+							const auto &ab = vb - va;
+							const auto &t = - proj[a] / ab.dot(norm);
+							const auto &c = slice.put(va + t * ab);
+							//Add new point:
+							NODE[ei] = VERT.size();
+							VERT.push_back(c);
+						}
+						line[fp ++] = NODE[ei];
+					}
+					if (proj[a] == 0) {
+						if (VMAP[a] == null) {
+							VMAP[a] = VERT.size();
+							VERT.push_back(slice.put(va));
+						}
+						++ ec;
+					}
+					if (proj[b] == 0) {
+						if (VMAP[b] == null) {
+							VMAP[b] = VERT.size();
+							VERT.push_back(slice.put(vb));
+						}
+						++ ec;
+					}
+
+					//Add new edge:
+					if (ec == 2) {
+						if (EMAP[ei] == null) {
+							EMAP[ei] = EDGE.size();
+							EDGE.push_back({VMAP[a], VMAP[b]});
+						}
+						++ fc;
+					}
+					//...
+				}
+
+				if ((fc > 1) && !USED[fi]) {
+					std::valarray<int> val(_face.size());
+					for (int i = 0; i < _face.size(); ++ i) {
+						val[i] = EMAP[_face[i]];
+					}
+					FACE.push_back(val);
+					USED[fi] = 1;
+					continue;
+				}
+				if (fp > 0) {
+					assert(fp == 2);
+					PATH.push_back(EDGE.size());
+					EDGE.push_back({line[0], line[1]});
+				}
+			}
+			//...
+			if (PATH.size() != 0) {
+				std::valarray<int> val(PATH.size());
+				for (int i = 0; i < PATH.size(); ++ i) {
+					val[i] = PATH[i];
+				}
+				FACE.push_back(val);
+			}
+		}
+
+		return t_mesh<T, M> (
+		std::move(VERT),
+		std::move(EDGE),
+		std::move(FACE)
+		);
+	}
 
 protected:
 	template <unsigned M> void set(const std::vector<t_item<M>> &it) {
@@ -252,10 +368,10 @@ std::ostream &operator<<(std::ostream &out, const t_mesh<T, N> &mesh) {
 
 //...
 
-typedef MESH::t_mesh<double, 3>
-t_mesh_3d;
 typedef MESH::t_mesh<double, 4>
 t_mesh_4d;
+typedef MESH::t_mesh<double, 3>
+t_mesh_3d;
 
 //...
 

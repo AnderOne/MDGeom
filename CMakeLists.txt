@@ -4,20 +4,7 @@ set(CMAKE_CXX_STANDARD 14)
 
 project(MDGeom)
 
-file(GLOB SYMATH_SRC "./src/geom/*.cpp")
-
-add_library(
-geom ${SYMATH_SRC}
-)
-
-add_executable(
-demo ./src/demo.cpp
-)
-
-target_include_directories(
-geom PRIVATE
-./inc
-)
+add_executable(demo ./src/demo.cpp)
 
 target_include_directories(
 demo PRIVATE
@@ -25,10 +12,5 @@ demo PRIVATE
 )
 
 target_link_libraries(
-geom
-)
-
-target_link_libraries(
 demo
-geom
 )
