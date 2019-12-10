@@ -16,7 +16,10 @@ template <typename T, unsigned N> using t_vert = t_vector<T, N>;
 template <unsigned N>
 //using t_item = std::array<int, N + 1>;
 struct t_item {
-	template <typename ... TT> t_item(TT ... args): ind{args ...} {}
+
+	template <typename ... TT> t_item(TT ... args): ind(args ...) {}
+
+	t_item(const std::initializer_list<int> &args): ind{args} {}
 
 	std::ostream &print(std::ostream &out) const {
 		out << ind.size(); for (int i: ind) out << "\t" << i;
@@ -40,6 +43,7 @@ private:
 };
 
 template <> struct t_item<1> {
+
 	template <typename ... TT> t_item(TT ... args): ind{args ...} {}
 
 	std::ostream &print(std::ostream &out) const {
