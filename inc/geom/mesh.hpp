@@ -30,6 +30,8 @@ struct t_item {
 
 	const auto end() const { return std::end(ind); }
 
+	const int *data() const { return &ind[0]; }
+
 	size_t size() const { return ind.size(); }
 
 	const auto &operator[](int i) const {
@@ -53,6 +55,8 @@ template <> struct t_item<1> {
 	const auto begin() const { return std::begin(ind); }
 
 	const auto end() const { return std::end(ind); }
+
+	const int *data() const { return ind.data(); }
 
 	size_t size() const { return ind.size(); }
 
