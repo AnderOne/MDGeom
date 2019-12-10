@@ -4,13 +4,25 @@ set(CMAKE_CXX_STANDARD 14)
 
 project(MDGeom)
 
-add_executable(demo ./src/demo.cpp)
+file(GLOB GEOM_SRC "./src/geom/*.cpp")
+
+add_library(geom ${GEOM_SRC})
+
+target_include_directories(geom PRIVATE ./inc)
+
+add_executable(demo_cpp ./src/demo.cpp)
 
 target_include_directories(
-demo PRIVATE
-./inc
+demo_cpp PRIVATE ./inc
+)
+
+add_executable(demo_c ./src/demo.c)
+
+target_include_directories(
+demo_c PRIVATE ./inc
 )
 
 target_link_libraries(
-demo
+demo_c
+geom
 )
