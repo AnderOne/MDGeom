@@ -403,6 +403,16 @@ int mov_mesh_3d(t_mesh_3d_hand *hand, const double dir[3]) {
 }
 
 
+int get_mesh_4d_sect_3d(t_mesh_3d_hand **hand, const t_mesh_4d_hand *from) {
+
+	static const t_slice_3d slice;
+	off_mesh_3d(hand);
+	*hand = new t_mesh_3d_hand{from->mesh.cross(slice)};
+
+	return 0;
+}
+
+
 int out_mesh_4d(FILE *out, const t_mesh_4d_hand *hand) {
 
 	std::stringstream str;

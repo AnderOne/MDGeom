@@ -104,6 +104,10 @@ int mov_mesh_3d(t_mesh_3d_hand *hand, const double dir[3]);
 
 //...
 
+int get_mesh_4d_sect_3d(t_mesh_3d_hand **hand, const t_mesh_4d_hand *from);
+
+//...
+
 int out_mesh_4d(FILE *out, const t_mesh_4d_hand *hand);
 int out_mesh_3d(FILE *out, const t_mesh_3d_hand *hand);
 
