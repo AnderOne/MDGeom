@@ -96,6 +96,14 @@ int off_mesh_3d(t_mesh_3d_hand **hand);
 
 //...
 
+int rot_mesh_4d(t_mesh_4d_hand *hand, unsigned i, unsigned j, double phi);
+int rot_mesh_3d(t_mesh_3d_hand *hand, unsigned i, unsigned j, double phi);
+
+int mov_mesh_4d(t_mesh_4d_hand *hand, const double dir[4]);
+int mov_mesh_3d(t_mesh_3d_hand *hand, const double dir[3]);
+
+//...
+
 int out_mesh_4d(FILE *out, const t_mesh_4d_hand *hand);
 int out_mesh_3d(FILE *out, const t_mesh_3d_hand *hand);
 

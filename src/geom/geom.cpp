@@ -376,6 +376,33 @@ int off_mesh_3d(t_mesh_3d_hand **hand) {
 }
 
 
+int rot_mesh_4d(t_mesh_4d_hand *hand, unsigned i, unsigned j, double phi) {
+
+	hand->mesh.rot(i, j, phi);
+
+	return 0;
+}
+
+int rot_mesh_3d(t_mesh_3d_hand *hand, unsigned i, unsigned j, double phi) {
+
+	hand->mesh.rot(i, j, phi);
+
+	return 0;
+}
+
+int mov_mesh_4d(t_mesh_4d_hand *hand, const double dir[4]) {
+
+	hand->mesh.mov({dir[0], dir[1], dir[2], dir[3]});
+	return 0;
+}
+
+int mov_mesh_3d(t_mesh_3d_hand *hand, const double dir[3]) {
+
+	hand->mesh.mov({dir[0], dir[1], dir[2]});
+	return 0;
+}
+
+
 int out_mesh_4d(FILE *out, const t_mesh_4d_hand *hand) {
 
 	std::stringstream str;
