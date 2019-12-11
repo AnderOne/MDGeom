@@ -9,7 +9,7 @@ int main() {
 	t_mesh_4d_hand mesh;
 
 	new_rect_4d(&mesh, min, max);
-	//...
+	out_mesh_4d(stdout, &mesh);
 	del_mesh_4d(&mesh);
 
 	return 0;

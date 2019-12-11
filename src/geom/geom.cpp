@@ -1,6 +1,8 @@
 #include <geom/geom.hpp>
 #include <geom/geom.h>
 
+#include <sstream>
+#include <cstdio>
 #include <memory>
 #include <map>
 
@@ -16,6 +18,9 @@ static std::map<const void *, std::unique_ptr<std::vector<t_cell>>> CELL_LIST;
 (const_cast<std::vector<TYPE> &> (*reinterpret_cast<const std::vector<TYPE> *> (HAND)))
 
 #define NEW_LIST(TYPE, SIZE) (std::make_unique<std::vector<TYPE>> (SIZE))
+
+#define GET(TYPE, HAND) \
+(const_cast<TYPE &> (*reinterpret_cast<const TYPE *> (HAND)))
 
 #define PTR(TYPE, HAND) \
 (const_cast<TYPE *> (reinterpret_cast<const TYPE *> (HAND)))
@@ -412,6 +417,26 @@ int del_mesh_3d(t_mesh_3d_hand *hand) {
 	t_mesh_3d *mesh = PTR(t_mesh_3d, hand->hand);
 	delete mesh;
 	hand->hand = nullptr;
+	return 0;
+}
+
+int out_mesh_4d(FILE *out, const t_mesh_4d_hand *hand) {
+
+	std::stringstream str;
+	const auto &mesh = GET(t_mesh_4d, hand->hand);
+	str << mesh;
+	fprintf(out, "%s", str.str().c_str());
+
+	return 0;
+}
+
+int out_mesh_3d(FILE *out, const t_mesh_3d_hand *hand) {
+
+	std::stringstream str;
+	const auto &mesh = GET(t_mesh_3d, hand->hand);
+	str << mesh;
+	fprintf(out, "%s", str.str().c_str());
+
 	return 0;
 }
 

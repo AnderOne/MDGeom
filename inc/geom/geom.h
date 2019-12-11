@@ -1,6 +1,12 @@
 #ifndef __INCLUDE_GEOM_H
 #define __INCLUDE_GEOM_H
 
+#ifndef __cplusplus
+#include <stdio.h>
+#else
+#include <cstdio>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -71,6 +77,11 @@ int new_rect_3d(t_mesh_3d_hand *hand, double min[3], double max[3]);
 
 int del_mesh_4d(t_mesh_4d_hand *hand);
 int del_mesh_3d(t_mesh_3d_hand *hand);
+
+//...
+
+int out_mesh_4d(FILE *out, const t_mesh_4d_hand *hand);
+int out_mesh_3d(FILE *out, const t_mesh_3d_hand *hand);
 
 #ifdef __cplusplus
 }
