@@ -8,423 +8,378 @@
 
 using namespace GEOM;
 
-static std::map<const void *, std::unique_ptr<std::vector<t_vector_4d>>> VERT_4D_LIST;
-static std::map<const void *, std::unique_ptr<std::vector<t_vector_3d>>> VERT_3D_LIST;
-static std::map<const void *, std::unique_ptr<std::vector<t_edge>>> EDGE_LIST;
-static std::map<const void *, std::unique_ptr<std::vector<t_face>>> FACE_LIST;
-static std::map<const void *, std::unique_ptr<std::vector<t_cell>>> CELL_LIST;
+template <typename T> struct t_temp_list {
 
-#define GET_LIST(TYPE, HAND) \
-(const_cast<std::vector<TYPE> &> (*reinterpret_cast<const std::vector<TYPE> *> (HAND)))
+	typedef std::vector<T> t_list;
+	typedef T t_item;
 
-#define NEW_LIST(TYPE, SIZE) (std::make_unique<std::vector<TYPE>> (SIZE))
+	const t_item &get(int i) const { return (*const_ptr)[i]; }
 
-#define GET(TYPE, HAND) \
-(const_cast<TYPE &> (*reinterpret_cast<const TYPE *> (HAND)))
+	bool set(int i, const T &val) {
+		if (!is_const()) { (*ptr)[i] = val; return 1; }
+		return 0;
+	}
 
-#define PTR(TYPE, HAND) \
-(const_cast<TYPE *> (reinterpret_cast<const TYPE *> (HAND)))
+	const t_list &const_data() const { return *const_ptr; }
+
+	t_list &data() { return *ptr; }
+
+	bool is_const() const { return ptr == nullptr; }
+
+	int size() const { return const_ptr->size(); }
+
+	t_temp_list(const t_list *_ptr):
+	const_ptr(_ptr), ptr(nullptr) {}
+
+	t_temp_list(size_t _size):
+	ptr(new t_list (_size)) { const_ptr = ptr; }
+
+	~t_temp_list() { delete ptr; }
+
+private:
+	const t_list *const_ptr;
+	t_list *ptr;
+};
+
+struct t_vert_4d_list: public t_temp_list<t_vector_4d> {
+	template <typename ... TT>
+	t_vert_4d_list(const TT &... args):
+	t_temp_list<t_vector_4d>
+	(args ...) {}
+};
+struct t_vert_3d_list: public t_temp_list<t_vector_3d> {
+	template <typename ... TT>
+	t_vert_3d_list(const TT &... args):
+	t_temp_list<t_vector_3d>
+	(args ...) {}
+};
+
+struct t_edge_list: public t_temp_list<t_edge> {
+	template <typename ... TT>
+	t_edge_list(const TT &... args):
+	t_temp_list<t_edge>
+	(args ...) {}
+};
+struct t_face_list: public t_temp_list<t_face> {
+	template <typename ... TT>
+	t_face_list(const TT &... args):
+	t_temp_list<t_face>
+	(args ...) {}
+};
+struct t_cell_list: public t_temp_list<t_cell> {
+	template <typename ... TT>
+	t_cell_list(const TT &... args):
+	t_temp_list<t_cell>
+	(args ...) {}
+};
+
+struct t_mesh_4d_hand {
+	t_mesh_4d mesh;
+};
+struct t_mesh_3d_hand {
+	t_mesh_3d mesh;
+};
+
+//...
+
+namespace {
+
+template <typename T, typename H>
+std::vector<T> mov_list(H *src) {
+	std::vector<T> res;
+	if (src->is_const()) res = std::move(src->data()); else res = src->const_data();
+	return res;
+}
+
+}
+
+//...
 
 extern "C" {
 
-int set_vert_4d(t_vert_4d_list *list, int i, const double val[4]) {
+int set_vert_4d_list_data(t_vert_4d_list *list, int i, const double val[4]) {
 
-	if ((list == nullptr) || !VERT_4D_LIST.count(list->hand)) {
-		//ERROR: ACCESS VIOLATION!
-		return -1;
-	}
-	auto &vec = GET_LIST(t_vector_4d, list->hand);
-	vec[i] = {val[0], val[1], val[2], val[3]};
+	return !list->set(i, {val[0], val[1], val[2], val[3]});
+}
+
+int set_vert_3d_list_data(t_vert_3d_list *list, int i, const double val[3]) {
+
+	return !list->set(i, {val[0], val[1], val[2]});
+}
+
+int set_edge_list_data(t_edge_list *list, int i, const int ind[2]) {
+
+	return !list->set(i, {ind[0], ind[1]});
+}
+
+int set_face_list_data(t_face_list *list, int i, int num, const int ind[]) {
+
+	return !list->set(i, t_face(ind, num));
+}
+
+int set_cell_list_data(t_cell_list *list, int i, int num, const int ind[]) {
+
+	return !list->set(i, t_cell(ind, num));
+}
+
+
+int get_vert_4d_list_data(t_vert_4d_data *vert, const t_vert_4d_list *list, int i) {
+
+	const auto &val = list->get(i);
+	vert->val = val.data();
 
 	return 0;
 }
 
-int set_vert_3d(t_vert_3d_list *list, int i, const double val[3]) {
+int get_vert_3d_list_data(t_vert_3d_data *vert, const t_vert_3d_list *list, int i) {
 
-	if ((list == nullptr) || !VERT_3D_LIST.count(list->hand)) {
-		//ERROR: ACCESS VIOLATION!
-		return -1;
-	}
-	auto &vec = GET_LIST(t_vector_3d, list->hand);
-	vec[i] = {val[0], val[1], val[2]};
+	const auto &val = list->get(i);
+	vert->val = val.data();
 
 	return 0;
 }
 
-int set_edge(t_edge_list *list, int i, const int ind[2]) {
+int get_edge_list_data(t_edge_data *edge, const t_edge_list *list, int i) {
 
-	if ((list == nullptr) || !EDGE_LIST.count(list->hand)) {
-		//ERROR: ACCESS VIOLATION!
-		return -1;
-	}
-	auto &vec = GET_LIST(t_edge, list->hand);
-	vec[i] = {ind[0], ind[1]};
+	const auto &ind = list->get(i);
+	edge->ind = ind.data();
 
 	return 0;
 }
 
-int set_face(t_face_list *list, int i, int num, const int ind[]) {
+int get_face_list_data(t_face_data *face, const t_face_list *list, int i) {
 
-	if ((list == nullptr) || !FACE_LIST.count(list->hand)) {
-		//ERROR: ACCESS VIOLATION!
-		return -1;
-	}
-	auto &vec = GET_LIST(t_face, list->hand);
-	vec[i] = t_face(ind, num);
+	const auto &ind = list->get(i);
+	face->ind = ind.data();
+	face->num = ind.size();
 
 	return 0;
 }
 
-int set_cell(t_cell_list *list, int i, int num, const int ind[]) {
+int get_cell_list_data(t_cell_data *cell, const t_cell_list *list, int i) {
 
-	if ((list == nullptr) || !CELL_LIST.count(list->hand)) {
-		//ERROR: ACCESS VIOLATION!
-		return -1;
-	}
-	auto &vec = GET_LIST(t_cell, list->hand);
-	vec[i] = t_cell(ind, num);
+	const auto &ind = list->get(i);
+	cell->ind = ind.data();
+	cell->num = ind.size();
 
 	return 0;
 }
 
-
-int get_vert_4d(t_vert_4d_data *vert, const t_vert_4d_list *list, int i) {
-
-	const auto &vec = GET_LIST(t_vector_4d, list->hand);
-
-	vert->val = vec[i].data();
-
-	return 0;
+int get_vert_4d_list_size(const t_vert_4d_list *list) {
+	return list->size();
 }
 
-int get_vert_3d(t_vert_3d_data *vert, const t_vert_3d_list *list, int i) {
-
-	const auto &vec = GET_LIST(t_vector_3d, list->hand);
-
-	vert->val = vec[i].data();
-
-	return 0;
+int get_vert_3d_list_size(const t_vert_3d_list *list) {
+	return list->size();
 }
 
-int get_edge(t_edge_data *edge, const t_edge_list *list, int i) {
-
-	const auto &vec = GET_LIST(t_edge, list->hand);
-
-	edge->ind = vec[i].data();
-
-	return 0;
+int get_edge_list_size(const t_edge_list *list) {
+	return list->size();
 }
 
-int get_face(t_face_data *face, const t_face_list *list, int i) {
-
-	const auto &vec = GET_LIST(t_face, list->hand);
-
-	face->num = vec[i].size();
-	face->ind = vec[i].data();
-
-	return 0;
+int get_face_list_size(const t_face_list *list) {
+	return list->size();
 }
 
-int get_cell(t_cell_data *cell, const t_cell_list *list, int i) {
-
-	const auto &vec = GET_LIST(t_cell, list->hand);
-
-	cell->num = vec[i].size();
-	cell->ind = vec[i].data();
-
-	return 0;
+int get_cell_list_size(const t_cell_list *list) {
+	return list->size();
 }
 
 
-int new_vert_4d_list(t_vert_4d_list *list, int size) {
-
-	auto ptr = NEW_LIST(t_vector_4d, size);
-	list->hand = ptr.get();
-	list->size = size;
-	VERT_4D_LIST[ptr.get()] = std::move(ptr);
-
+int new_vert_4d_list(t_vert_4d_list **list, int size) {
+	off_vert_4d_list(list);
+	*list = new t_vert_4d_list(size);
 	return 0;
 }
 
-int new_vert_3d_list(t_vert_3d_list *list, int size) {
-
-	auto ptr = NEW_LIST(t_vector_3d, size);
-	list->hand = ptr.get();
-	list->size = size;
-	VERT_3D_LIST[ptr.get()] = std::move(ptr);
-
+int new_vert_3d_list(t_vert_3d_list **list, int size) {
+	off_vert_3d_list(list);
+	*list = new t_vert_3d_list(size);
 	return 0;
 }
 
-int new_edge_list(t_edge_list *list, int size) {
-
-	auto ptr = NEW_LIST(t_edge, size);
-	list->hand = ptr.get();
-	list->size = size;
-	EDGE_LIST[ptr.get()] = std::move(ptr);
-
+int new_edge_list(t_edge_list **list, int size) {
+	off_edge_list(list);
+	*list = new t_edge_list(size);
 	return 0;
 }
 
-int new_face_list(t_face_list *list, int size) {
-
-	auto ptr = NEW_LIST(t_face, size);
-	list->hand = ptr.get();
-	list->size = size;
-	FACE_LIST[ptr.get()] = std::move(ptr);
-
+int new_face_list(t_face_list **list, int size) {
+	off_face_list(list);
+	*list = new t_face_list(size);
 	return 0;
 }
 
-int new_cell_list(t_cell_list *list, int size) {
-
-	auto ptr = NEW_LIST(t_cell, size);
-	list->hand = ptr.get();
-	list->size = size;
-	CELL_LIST[ptr.get()] = std::move(ptr);
-
+int new_cell_list(t_cell_list **list, int size) {
+	off_cell_list(list);
+	*list = new t_cell_list(size);
 	return 0;
 }
 
 
-int del_vert_4d_list(t_vert_4d_list *list) {
-
-	if ((list == nullptr) || !VERT_4D_LIST.count(list->hand)) {
-		//ERROR: ACCESS VIOLATION!
-		return -1;
-	}
-	VERT_4D_LIST.erase(list->hand);
-	list->hand = nullptr;
-	list->size = 0;
+int off_vert_4d_list(t_vert_4d_list **list) {
+	delete *list; *list = nullptr;
 	return 0;
 }
 
-int del_vert_3d_list(t_vert_3d_list *list) {
-
-	if ((list == nullptr) || !VERT_3D_LIST.count(list->hand)) {
-		//ERROR: ACCESS VIOLATION!
-		return -1;
-	}
-	VERT_3D_LIST.erase(list->hand);
-	list->hand = nullptr;
-	list->size = 0;
+int off_vert_3d_list(t_vert_3d_list **list) {
+	delete *list; *list = nullptr;
 	return 0;
 }
 
-int del_edge_list(t_edge_list *list) {
-
-	if ((list == nullptr) || !EDGE_LIST.count(list->hand)) {
-		//ERROR: ACCESS VIOLATION!
-		return -1;
-	}
-	EDGE_LIST.erase(list->hand);
-	list->hand = nullptr;
-	list->size = 0;
+int off_edge_list(t_edge_list **list) {
+	delete *list; *list = nullptr;
 	return 0;
 }
 
-int del_face_list(t_face_list *list) {
-
-	if ((list == nullptr) || !FACE_LIST.count(list->hand)) {
-		//ERROR: ACCESS VIOLATION!
-		return -1;
-	}
-	FACE_LIST.erase(list->hand);
-	list->hand = nullptr;
-	list->size = 0;
+int off_face_list(t_face_list **list) {
+	delete *list; *list = nullptr;
 	return 0;
 }
 
-int del_cell_list(t_cell_list *list) {
-
-	if ((list == nullptr) || !CELL_LIST.count(list->hand)) {
-		//ERROR: ACCESS VIOLATION!
-		return -1;
-	}
-	CELL_LIST.erase(list->hand);
-	list->hand = nullptr;
-	list->size = 0;
+int off_cell_list(t_cell_list **list) {
+	delete *list; *list = nullptr;
 	return 0;
 }
 
 
 //...
 
-int get_vert_4d_list(t_vert_4d_list *list, const t_mesh_4d_hand *hand) {
-
-	t_mesh_4d *mesh = PTR(t_mesh_4d, hand->hand);
-	list->size =   mesh->vert().size();
-	list->hand = &(mesh->vert());
-
+int get_mesh_4d_vert_list(t_vert_4d_list **list, const t_mesh_4d_hand *hand) {
+	off_vert_4d_list(list);
+	*list = new t_vert_4d_list(&(hand->mesh.vert()));
 	return 0;
 }
 
-int get_vert_3d_list(t_vert_3d_list *list, const t_mesh_3d_hand *hand) {
-
-	t_mesh_3d *mesh = PTR(t_mesh_3d, hand->hand);
-	list->size =   mesh->vert().size();
-	list->hand = &(mesh->vert());
-
+int get_mesh_3d_vert_list(t_vert_3d_list **list, const t_mesh_3d_hand *hand) {
+	off_vert_3d_list(list);
+	*list = new t_vert_3d_list(&(hand->mesh.vert()));
 	return 0;
 }
 
 
-int get_edge_4d_list(t_edge_list *list, const t_mesh_4d_hand *hand) {
-
-	t_mesh_4d *mesh = PTR(t_mesh_4d, hand->hand);
-	list->size =   mesh->edge().size();
-	list->hand = &(mesh->edge());
-
+int get_mesh_4d_edge_list(t_edge_list **list, const t_mesh_4d_hand *hand) {
+	off_edge_list(list);
+	*list = new t_edge_list(&(hand->mesh.edge()));
 	return 0;
 }
 
-int get_edge_3d_list(t_edge_list *list, const t_mesh_3d_hand *hand) {
-
-	t_mesh_3d *mesh = PTR(t_mesh_3d, hand->hand);
-	list->size =   mesh->edge().size();
-	list->hand = &(mesh->edge());
-
+int get_mesh_3d_edge_list(t_edge_list **list, const t_mesh_3d_hand *hand) {
+	off_edge_list(list);
+	*list = new t_edge_list(&(hand->mesh.edge()));
 	return 0;
 }
 
 
-int get_face_4d_list(t_face_list *list, const t_mesh_4d_hand *hand) {
-
-	t_mesh_4d *mesh = PTR(t_mesh_4d, hand->hand);
-	list->size =   mesh->face().size();
-	list->hand = &(mesh->face());
-
+int get_mesh_4d_face_list(t_face_list **list, const t_mesh_4d_hand *hand) {
+	off_face_list(list);
+	*list = new t_face_list(&(hand->mesh.face()));
 	return 0;
 }
 
-int get_face_3d_list(t_face_list *list, const t_mesh_3d_hand *hand) {
-
-	t_mesh_3d *mesh = PTR(t_mesh_3d, hand->hand);
-	list->size =   mesh->face().size();
-	list->hand = &(mesh->face());
-
+int get_mesh_3d_face_list(t_face_list **list, const t_mesh_3d_hand *hand) {
+	off_face_list(list);
+	*list = new t_face_list(&(hand->mesh.face()));
 	return 0;
 }
 
 
-int get_cell_4d_list(t_cell_list *list, const t_mesh_4d_hand *hand) {
+int get_mesh_4d_cell_list(t_cell_list **list, const t_mesh_4d_hand *hand) {
+	off_cell_list(list);
+	*list = new t_cell_list(&(hand->mesh.cell()));
+	return 0;
+}
 
-	t_mesh_4d *mesh = PTR(t_mesh_4d, hand->hand);
-	list->size =   mesh->cell().size();
-	list->hand = &(mesh->cell());
+
+int new_mesh_4d(t_mesh_4d_hand **hand, t_vert_4d_list **vert, t_edge_list **edge, t_face_list **face, t_cell_list **cell) {
+
+	off_mesh_4d(hand);
+
+	*hand = new t_mesh_4d_hand{
+	t_mesh_4d(
+		mov_list<t_vector_4d>(*vert),
+		mov_list<t_edge>(*edge),
+		mov_list<t_face>(*face),
+		mov_list<t_cell>(*cell)
+	)};
+
+	off_vert_4d_list(vert);
+	off_edge_list(edge);
+	off_face_list(face);
+	off_cell_list(cell);
+
+	return 0;
+}
+
+int new_mesh_3d(t_mesh_3d_hand **hand, t_vert_3d_list **vert, t_edge_list **edge, t_face_list **face) {
+
+	off_mesh_3d(hand);
+
+	*hand = new t_mesh_3d_hand{
+	t_mesh_3d(
+		mov_list<t_vector_3d>(*vert),
+		mov_list<t_edge>(*edge),
+		mov_list<t_face>(*face)
+	)};
+
+	off_vert_3d_list(vert);
+	off_edge_list(edge);
+	off_face_list(face);
 
 	return 0;
 }
 
 
-int new_mesh_4d(t_mesh_4d_hand *hand, t_vert_4d_list *vert, t_edge_list *edge, t_face_list *face, t_cell_list *cell) {
+int new_rect_4d(t_mesh_4d_hand **hand, const double min[4], const double max[4]) {
 
-	if (!VERT_4D_LIST.count(vert->hand) || !EDGE_LIST.count(edge->hand) ||
-	    !FACE_LIST.count(face->hand) || !CELL_LIST.count(cell->hand)) {
-		//ERROR: ACCESS VIOLATION!
-		return -1;
+	off_mesh_4d(hand);
+
+	*hand = new t_mesh_4d_hand{
+	t_rect_4d(
+	{min[0], min[1], min[2], min[3]},
+	{max[0], max[1], max[2], max[3]}
+	)};
+
+	return 0;
+}
+
+int new_rect_3d(t_mesh_3d_hand **hand, const double min[4], const double max[4]) {
+
+	off_mesh_3d(hand);
+
+	*hand = new t_mesh_3d_hand{
+	t_rect_3d(
+	{min[0], min[1], min[2]},
+	{max[0], max[1], max[2]}
+	)};
+
+	return 0;
+}
+
+
+int off_mesh_4d(t_mesh_4d_hand **hand) {
+
+	if (*hand != nullptr) {
+		delete *hand;
+		*hand = nullptr;
 	}
-	auto &vert_list = GET_LIST(t_vector_4d, vert->hand);
-	auto &edge_list = GET_LIST(t_edge, edge->hand);
-	auto &face_list = GET_LIST(t_face, face->hand);
-	auto &cell_list = GET_LIST(t_cell, cell->hand);
-
-	hand->hand = new t_mesh_4d(
-		std::move(vert_list),
-		std::move(edge_list),
-		std::move(face_list),
-		std::move(cell_list)
-	);
-
-	VERT_4D_LIST.erase(vert->hand);
-	EDGE_LIST.erase(edge->hand);
-	FACE_LIST.erase(face->hand);
-	CELL_LIST.erase(cell->hand);
-
-	vert->hand = nullptr;
-	edge->hand = nullptr;
-	face->hand = nullptr;
-	cell->hand = nullptr;
-	vert->size = 0;
-	edge->size = 0;
-	face->size = 0;
-	cell->size = 0;
-
 	return 0;
 }
 
-int new_mesh_3d(t_mesh_3d_hand *hand, t_vert_3d_list *vert, t_edge_list *edge, t_face_list *face) {
+int off_mesh_3d(t_mesh_3d_hand **hand) {
 
-	if (!VERT_3D_LIST.count(vert->hand) || !EDGE_LIST.count(edge->hand) ||
-	    !FACE_LIST.count(face->hand)) {
-		//ERROR: ACCESS VIOLATION!
-		return -1;
+	if (*hand != nullptr) {
+		delete *hand;
+		*hand = nullptr;
 	}
-	auto &vert_list = GET_LIST(t_vector_3d, vert->hand);
-	auto &edge_list = GET_LIST(t_edge, edge->hand);
-	auto &face_list = GET_LIST(t_face, face->hand);
-
-	hand->hand = new t_mesh_3d(
-		std::move(vert_list),
-		std::move(edge_list),
-		std::move(face_list)
-	);
-
-	VERT_3D_LIST.erase(vert->hand);
-	EDGE_LIST.erase(edge->hand);
-	FACE_LIST.erase(face->hand);
-
-	vert->hand = nullptr;
-	edge->hand = nullptr;
-	face->hand = nullptr;
-	vert->size = 0;
-	edge->size = 0;
-	face->size = 0;
-
 	return 0;
 }
 
-
-int new_rect_4d(t_mesh_4d_hand *hand, double min[4], double max[4]) {
-
-	hand->hand = new t_rect_4d(
-	{min[0], min[1], min[2], min[3]}, {max[0], max[1], max[2], max[3]}
-	);
-
-	return 0;
-}
-
-int new_rect_3d(t_mesh_3d_hand *hand, double min[3], double max[3]) {
-
-	hand->hand = new t_rect_3d(
-	{min[0], min[1], min[2]}, {max[0], max[1], max[2]}
-	);
-
-	return 0;
-}
-
-
-int del_mesh_4d(t_mesh_4d_hand *hand) {
-
-	t_mesh_4d *mesh = PTR(t_mesh_4d, hand->hand);
-	delete mesh;
-	hand->hand = nullptr;
-	return 0;
-}
-
-int del_mesh_3d(t_mesh_3d_hand *hand) {
-
-	t_mesh_3d *mesh = PTR(t_mesh_3d, hand->hand);
-	delete mesh;
-	hand->hand = nullptr;
-	return 0;
-}
 
 int out_mesh_4d(FILE *out, const t_mesh_4d_hand *hand) {
 
 	std::stringstream str;
-	const auto &mesh = GET(t_mesh_4d, hand->hand);
-	str << mesh;
+	str << hand->mesh;
 	fprintf(out, "%s", str.str().c_str());
 
 	return 0;
@@ -433,8 +388,7 @@ int out_mesh_4d(FILE *out, const t_mesh_4d_hand *hand) {
 int out_mesh_3d(FILE *out, const t_mesh_3d_hand *hand) {
 
 	std::stringstream str;
-	const auto &mesh = GET(t_mesh_3d, hand->hand);
-	str << mesh;
+	str << hand->mesh;
 	fprintf(out, "%s", str.str().c_str());
 
 	return 0;
