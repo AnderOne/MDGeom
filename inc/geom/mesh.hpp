@@ -4,6 +4,7 @@
 #include <valarray>
 #include <vector>
 #include <array>
+#include <map>
 
 namespace GEOM {
 
@@ -249,6 +250,7 @@ struct t_mesh {
 		std::vector<int> EMAP(edge().size(), null);
 		std::vector<int> NODE(edge().size(), null);
 		std::vector<int> USED(face().size(), 0);
+		std::map<std::pair<int, int>, int> ESET;
 
 		//Check for cells:
 		for (int ci = 0; ci < cell().size(); ++ ci) {
@@ -323,8 +325,13 @@ struct t_mesh {
 				}
 				if (fp > 0) {
 					assert(fp == 2);
-					PATH.push_back(EDGE.size());
-					EDGE.push_back({line[0], line[1]});
+					int a = line[0], b = line[1];
+					if (a > b) std::swap(a, b);
+					if (!ESET.count({a, b})) {
+						ESET[{a, b}] = EDGE.size();
+						EDGE.push_back({a, b});
+					}
+					PATH.push_back(ESET[{a, b}]);
 				}
 			}
 			//...
