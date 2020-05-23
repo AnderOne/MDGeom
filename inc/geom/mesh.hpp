@@ -43,6 +43,8 @@ typedef t_cell<1> t_edge;
 template <typename T, unsigned N, unsigned M, unsigned K>
 struct t_iter;
 template <typename T, unsigned N, unsigned M, unsigned K>
+struct t_link;
+template <typename T, unsigned N, unsigned M, unsigned K>
 struct t_part;
 template <typename T, unsigned N, unsigned M>
 struct t_mesh;
@@ -60,15 +62,35 @@ struct t_hand {
 	template <typename ... TT> static t_grid<N> make(const std::vector<t_cell<M>> &cell, TT && ... args) {
 		t_grid<N> grid = std::move(t_hand<N, M + 1>::
 		          make(std::forward<TT>(args) ...));
+		fill(grid, cell);
 		t_hand<N, M>::cell(grid) = cell;
 		return grid;
 	}
 	template <typename ... TT> static t_grid<N> make(std::vector<t_cell<M>> &&cell, TT && ... args) {
 		t_grid<N> grid = std::move(t_hand<N, M + 1>::
 		          make(std::forward<TT>(args) ...));
+		fill(grid, cell);
 		t_hand<N, M>::cell(grid) =
 		          std::move(cell);
 		return grid;
+	}
+
+	static void fill(t_grid<N> &grid, const std::vector<t_cell<M>> &cell) {
+		auto &link = grid.template link<M - 1>();
+		for (int c = 0; c < cell.size(); ++ c)
+		for (int l: cell[c]) {
+			if (l >= link.size()) {
+				link.resize(l + 1);
+			}
+			link[l].push_back(c);
+		}
+	}
+
+	static const std::vector<std::vector<int>> &link(const t_grid<N> &grid) {
+		return t_hand<N-1, M>::link(grid.GRID);
+	}
+	static std::vector<std::vector<int>> &link(t_grid<N> &grid) {
+		return t_hand<N-1, M>::link(grid.GRID);
 	}
 
 	static const std::vector<t_cell<M>> &cell(const t_grid<N> &grid) {
@@ -89,6 +111,9 @@ struct t_hand {
 template <unsigned N>
 struct t_hand<N, N> {
 
+	static const std::vector<std::vector<int>> &link(const t_grid<N> &grid) { return grid.LINK; }
+	static std::vector<std::vector<int>> &link(t_grid<N> &grid) { return grid.LINK; }
+
 	static const std::vector<t_cell<N>> &cell(const t_grid<N> &grid) { return grid.CELL; }
 	static std::vector<t_cell<N>> &cell(t_grid<N> &grid) { return grid.CELL; }
 
@@ -96,11 +121,24 @@ struct t_hand<N, N> {
 	static t_grid<N> &grid(t_grid<N> &grid) { return grid; }
 
 	static t_grid<N> make(const std::vector<t_cell<N>> &cell) {
-		t_grid<N> grid; grid.CELL = cell; return grid;
+		t_grid<N> grid; fill(grid, cell); grid.CELL = cell;
+		return grid;
 	}
 	static t_grid<N> make(std::vector<t_cell<N>> &&cell) {
-		t_grid<N> grid; grid.CELL = std::move(cell);
+		t_grid<N> grid; fill(grid, cell);
+		grid.CELL = std::move(cell);
 		return grid;
+	}
+
+	static void fill(t_grid<N> &grid, const std::vector<t_cell<N>> &cell) {
+		auto &link = grid.template link<N - 1>();
+		for (int c = 0; c < cell.size(); ++ c)
+		for (int l: cell[c]) {
+			if (l >= link.size()) {
+				link.resize(l + 1);
+			}
+			link[l].push_back(c);
+		}
 	}
 
 };
@@ -108,6 +146,13 @@ struct t_hand<N, N> {
 //Grid structures:
 template <unsigned N>
 struct t_grid {
+
+	template <unsigned M> const std::vector<std::vector<int>> &link() const {
+		return t_hand<N, M>::link(*this);
+	}
+	template <unsigned M> std::vector<std::vector<int>> &link() {
+		return t_hand<N, M>::link(*this);
+	}
 
 	template <unsigned M, typename = typename std::enable_if<(M > 0)>::type>
 	const std::vector<t_cell<M>> &cell() const {
@@ -129,12 +174,15 @@ private:
 	template <unsigned _N, unsigned _M>
 	friend struct t_hand;
 
+	std::vector<std::vector<int>> LINK;
 	std::vector<t_cell<N>> CELL;
 	t_grid<N-1> GRID;
 };
 
 template <> struct
-t_grid<0> {};
+t_grid<0> {
+	std::vector<std::vector<int>> LINK;
+};
 
 //Iterator:
 template <typename T, unsigned N, unsigned M, unsigned K> struct t_iter {
@@ -157,6 +205,8 @@ private:
 	template <typename _T, unsigned _N, unsigned _M, unsigned _K>
 	friend struct MESH::t_iter;
 	template <typename _T, unsigned _N, unsigned _M, unsigned _K>
+	friend struct MESH::t_link;
+	template <typename _T, unsigned _N, unsigned _M, unsigned _K>
 	friend struct MESH::t_part;
 	template <typename _T, unsigned _N, unsigned _K>
 	friend struct MESH::t_mesh;
@@ -174,9 +224,69 @@ private:
 	t_part PART;
 };
 
+//Links:
+template <typename T, unsigned N, unsigned M, unsigned K> struct t_link {
+
+	typedef MESH::t_mesh<T, N, M> t_mesh;
+
+	t_iter<T, N, M, K+1> begin() const {
+		return t_iter<T, N, M, K+1>(MESH, MESH.template link<K>()[ind].data(), 0);
+	}
+	t_iter<T, N, M, K+1> end() const {
+		return t_iter<T, N, M, K+1>(MESH, MESH.template link<K>()[ind].data(),
+		MESH.template link<K>()[ind].size(),
+		false
+		);
+	}
+
+	const std::vector<int> &item() const { return MESH.template link<K>()[ind]; }
+	int item(int i) const { return MESH.template link<K>()[ind][i]; }
+	size_t size() const { MESH.template link<K>()[ind].size(); }
+
+private:
+	template <typename _T, unsigned _N, unsigned _M, unsigned _K>
+	friend struct MESH::t_iter;
+	template <typename _T, unsigned _N, unsigned _M, unsigned _K>
+	friend struct MESH::t_link;
+	template <typename _T, unsigned _N, unsigned _K>
+	friend struct MESH::t_mesh;
+
+	t_link(const t_mesh &_mesh, int _ind):
+	       MESH(_mesh), ind(_ind) {}
+	t_link(const t_mesh &_mesh):
+	       MESH(_mesh) {}
+
+	const t_mesh &MESH;
+	int ind;
+};
+
+template <typename T, unsigned N, unsigned M> struct t_link<T, N, M, M> {
+
+	typedef MESH::t_mesh<T, N, M> t_mesh;
+
+	size_t size() const { return 0; }
+
+private:
+	template <typename _T, unsigned _N, unsigned _M, unsigned _K>
+	friend struct MESH::t_iter;
+	template <typename _T, unsigned _N, unsigned _M, unsigned _K>
+	friend struct MESH::t_link;
+	template <typename _T, unsigned _N, unsigned _K>
+	friend struct MESH::t_mesh;
+
+	t_link(const t_mesh &_mesh, int _ind):
+	       MESH(_mesh), ind(_ind) {}
+	t_link(const t_mesh &_mesh):
+	       MESH(_mesh) {}
+
+	const t_mesh &MESH;
+	int ind;
+};
+
 //Proxy:
 template <typename T, unsigned N, unsigned M, unsigned K> struct t_part {
 
+	typedef MESH::t_link<T, N, M, K> t_link;
 	typedef MESH::t_mesh<T, N, M> t_mesh;
 
 	t_iter<T, N, M, K-1> begin() const {
@@ -184,12 +294,14 @@ template <typename T, unsigned N, unsigned M, unsigned K> struct t_part {
 	}
 	t_iter<T, N, M, K-1> end() const {
 		return t_iter<T, N, M, K-1>(MESH, MESH.template cell<K>()[ind].data(),
-		MESH.template cell<K>()[ind].size(), false
+		MESH.template cell<K>()[ind].size(),
+		false
 		);
 	}
 
-	const t_cell<K> &cell() const { return MESH.template cell<K>()[ind]; }
-	int cell(int i) const { return MESH.template cell<K>()[ind][i]; }
+	const t_cell<K> &item() const { return MESH.template cell<K>()[ind]; }
+	int item(int i) const { return MESH.template cell<K>()[ind][i]; }
+	t_link link() const { return MESH.template link<K>(ind); }
 
 	int id() const { return ind; }
 
@@ -212,9 +324,12 @@ private:
 
 template <typename T, unsigned N, unsigned M> struct t_part<T, N, M, 0> {
 
+	typedef MESH::t_link<T, N, M, 0> t_link;
 	typedef MESH::t_mesh<T, N, M> t_mesh;
 
 	const t_vert<T, N> &data() const { return MESH.vert()[ind]; }
+	t_link link() const { return MESH.template link<0>(ind); }
+
 	int id() const { return ind; }
 
 private:
@@ -238,6 +353,7 @@ private:
 template <typename T, unsigned N, unsigned M = N - 1> struct t_mesh {
 
 	template<unsigned K> using t_iter = MESH::t_iter<T, N, M, K>;
+	template<unsigned K> using t_link = MESH::t_link<T, N, M, K>;
 	template<unsigned K> using t_part = MESH::t_part<T, N, M, K>;
 	typedef MESH::t_vert<T, N> t_vert;
 
@@ -268,6 +384,9 @@ template <typename T, unsigned N, unsigned M = N - 1> struct t_mesh {
 	}
 
 	//Data access:
+	template <unsigned I> const std::vector<std::vector<int>> &link() const { return GRID.template link<I>(); }
+	template <unsigned I> t_link<I> link(int i) const { return t_link<I>(*this, i); }
+
 	template <unsigned I> const std::vector<t_cell<I>> &cell() const { return GRID.template cell<I>(); }
 	const std::vector<t_body> &body() const { return cell<3>(); }
 	const std::vector<t_face> &face() const { return cell<2>(); }
@@ -306,6 +425,8 @@ protected:
 private:
 	template <typename _T, unsigned _N, unsigned _M>
 	friend struct MESH::t_iter;
+	template <typename _T, unsigned _N, unsigned _M>
+	friend struct MESH::t_link;
 	template <typename _T, unsigned _N, unsigned _M>
 	friend struct MESH::t_part;
 

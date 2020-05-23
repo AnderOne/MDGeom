@@ -33,17 +33,29 @@ int main() {
 	);
 
 	//Iteration over mesh elements:
-	for (auto face: mesh) {
-		std::cout << "FACE [" << face.id() << "]:\n";
-		for (auto edge: face) {
-			std::cout << "EDGE [" << edge.id() << "]:\n";
-			for (auto vert: edge) {
-				std::cout << "VERT [" << vert.id() << "]:\t";
-				std::cout << "(";
-				std::cout << vert.data();
-				std::cout << ")\n";
+	for (const auto &face: mesh) {
+		std::cout << "START FACE [" << face.id() << "]:\n";
+		for (const auto &edge: face) {
+			std::cout << "START EDGE [" << edge.id() << "] lying on faces: {";
+			for (const auto &link: edge.link()) {
+				std::cout << link.id();
+				std::cout << ", ";
 			}
+			std::cout << "}\n";
+			for (const auto &vert: edge) {
+				std::cout << "START VERT [" << vert.id() << "] lying on edges: {";
+				for (const auto &link: vert.link()) {
+					std::cout << link.id();
+					std::cout << ", ";
+				}
+				std::cout << "}\n";
+				std::cout << vert.data();
+				std::cout << "\n";
+				std::cout << "END VERT\n";
+			}
+			std::cout << "END EDGE\n";
 		}
+		std::cout << "END FACE\n";
 	}
 
 	//Output mesh into file:
