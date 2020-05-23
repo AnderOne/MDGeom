@@ -11,6 +11,7 @@ using namespace GEOM;
 
 int main() {
 
+	//Generate 3d-mesh by its elements:
 	std::vector<t_mesh_3d::t_vert> VERT{
 		{0., 0., 0.}, {0., 0., 1.}, {0., 1., 0.}, {0., 1., 1.},
 		{1., 0., 0.}, {1., 0., 1.}, {1., 1., 0.}, {1., 1., 1.}
@@ -18,11 +19,7 @@ int main() {
 	std::vector<t_edge> EDGE{
 		{0, 1}, {0, 2}, {0, 4}, {1, 3}, {1, 5}, {2, 3},
 		{2, 6}, {3, 7}, {4, 5}, {4, 6}, {5, 7}, {6, 7},
-		//...
-		{0, 3}, {0, 5}, {0, 6},
-		{1, 7}, {2, 7}, {4, 7},
-		//...
-		{0, 7}
+		{0, 3}, {0, 5}, {0, 6}, {1, 7}, {2, 7}, {4, 7}
 	};
 	std::vector<t_face> FACE{
 		{6, 11, 16}, {8, 10, 17}, {9, 11, 17},
@@ -35,6 +32,21 @@ int main() {
 	std::move(VERT), std::move(EDGE), std::move(FACE)
 	);
 
+	//Iteration over mesh elements:
+	for (auto face: mesh) {
+		std::cout << "FACE [" << face.id() << "]:\n";
+		for (auto edge: face) {
+			std::cout << "EDGE [" << edge.id() << "]:\n";
+			for (auto vert: edge) {
+				std::cout << "VERT [" << vert.id() << "]:\t";
+				std::cout << "(";
+				std::cout << vert.data();
+				std::cout << ")\n";
+			}
+		}
+	}
+
+	//Output mesh into file:
 	std::ofstream fout("test.txt");
 	fout << "1\n" << mesh.vert().size();
 	fout << "\n";
