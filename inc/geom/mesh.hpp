@@ -30,45 +30,50 @@ template <unsigned N,
           unsigned M>
 struct t_hand {
 
-	static_assert((M > 0) && (M < N));
+	static_assert((M >= 0) && (M < N));
 
-	template <typename ... TT>
-	static t_grid<N> gen(const std::vector<t_cell<M>> &cell, TT && ... args) {
+	template <typename ... TT> static t_grid<N> make(const std::vector<t_cell<M>> &cell, TT && ... args) {
 		t_grid<N> grid = std::move(t_hand<N, M + 1>::
-		          gen(std::forward<TT>(args) ...));
-		t_hand<N, M>::get(grid) = cell;
+		          make(std::forward<TT>(args) ...));
+		t_hand<N, M>::cell(grid) = cell;
 		return grid;
 	}
-	template <typename ... TT>
-	static t_grid<N> gen(std::vector<t_cell<M>> &&cell, TT && ... args) {
+	template <typename ... TT> static t_grid<N> make(std::vector<t_cell<M>> &&cell, TT && ... args) {
 		t_grid<N> grid = std::move(t_hand<N, M + 1>::
-		          gen(std::forward<TT>(args) ...));
-		t_hand<N, M>::get(grid) =
+		          make(std::forward<TT>(args) ...));
+		t_hand<N, M>::cell(grid) =
 		          std::move(cell);
 		return grid;
 	}
 
-	static const std::vector<t_cell<M>> &get(const t_grid<N> &grid) {
-		return t_hand<N-1, M>::get(grid.GRID);
+	static const std::vector<t_cell<M>> &cell(const t_grid<N> &grid) {
+		return t_hand<N-1, M>::cell(grid.GRID);
 	}
-	static std::vector<t_cell<M>> &get(t_grid<N> &grid) {
-		return t_hand<N-1, M>::get(grid.GRID);
+	static std::vector<t_cell<M>> &cell(t_grid<N> &grid) {
+		return t_hand<N-1, M>::cell(grid.GRID);
+	}
+
+	static const t_grid<M> &grid(const t_grid<N> &grid) {
+		return t_hand<N-1, M>::grid(grid.GRID);
+	}
+	static t_grid<M> &grid(t_grid<N> &grid) {
+		return t_hand<N-1, M>::grid(grid.GRID);
 	}
 };
 
 template <unsigned N>
 struct t_hand<N, N> {
 
-	static const std::vector<t_cell<N>> &get(const t_grid<N> &grid) {
-		return grid.CELL;
-	}
-	static std::vector<t_cell<N>> &get(t_grid<N> &grid) {
-		return grid.CELL;
-	}
-	static t_grid<N> gen(const std::vector<t_cell<N>> &cell) {
+	static const std::vector<t_cell<N>> &cell(const t_grid<N> &grid) { return grid.CELL; }
+	static std::vector<t_cell<N>> &cell(t_grid<N> &grid) { return grid.CELL; }
+
+	static const t_grid<N> &grid(const t_grid<N> &grid) { return grid; }
+	static t_grid<N> &grid(t_grid<N> &grid) { return grid; }
+
+	static t_grid<N> make(const std::vector<t_cell<N>> &cell) {
 		t_grid<N> grid; grid.CELL = cell; return grid;
 	}
-	static t_grid<N> gen(std::vector<t_cell<N>> &&cell) {
+	static t_grid<N> make(std::vector<t_cell<N>> &&cell) {
 		t_grid<N> grid; grid.CELL = std::move(cell);
 		return grid;
 	}
@@ -79,21 +84,32 @@ struct t_hand<N, N> {
 template <unsigned N>
 struct t_grid {
 
-	template <unsigned M> const std::vector<t_cell<M>> &get() const {
-		return t_hand<N, M>::get(*this);
+	template <unsigned M, typename = typename std::enable_if<(M > 0)>::type>
+	const std::vector<t_cell<M>> &cell() const {
+		return t_hand<N, M>::cell(*this);
 	}
-	template <unsigned M> std::vector<t_cell<M>> &get() {
-		return t_hand<N, M>::get(*this);
+	template <unsigned M, typename = typename std::enable_if<(M > 0)>::type>
+	std::vector<t_cell<M>> &cell() {
+		return t_hand<N, M>::cell(*this);
 	}
+
+	template <unsigned M> const t_grid<M> &grid() const {
+		return t_hand<N, M>::grid(*this);
+	}
+	template <unsigned M> t_grid<M> &grid() {
+		return t_hand<N, M>::grid(*this);
+	}
+
+private:
+	template <unsigned _N, unsigned _M>
+	friend struct t_hand;
 
 	std::vector<t_cell<N>> CELL;
 	t_grid<N-1> GRID;
 };
 
-template <> struct t_grid<1> {
-
-	std::vector<t_edge> CELL;
-};
+template <> struct
+t_grid<0> {};
 
 //Mesh structures:
 template <typename T, unsigned N, unsigned M = N - 1>
@@ -106,13 +122,13 @@ struct t_mesh {
 
 	template <typename ... TT> t_mesh(const std::vector<t_vert> &vert, TT && ... args):
 	                           VERT(vert),
-	                           GRID(std::move(t_hand<M, 1>::gen(
+	                           GRID(std::move(t_hand<M, 1>::make(
 	                           std::forward<TT>(args) ...
 	                           ))) {}
 
 	template <typename ... TT> t_mesh(std::vector<t_vert> &&vert, TT && ... args):
 	                           VERT(std::move(vert)),
-	                           GRID(std::move(t_hand<M, 1>::gen(
+	                           GRID(std::move(t_hand<M, 1>::make(
 	                           std::forward<TT>(args) ...
 	                           ))) {}
 
@@ -134,7 +150,7 @@ struct t_mesh {
 
 	//Data access:
 	template <unsigned I> const std::vector<t_cell<I>> &cell() const {
-		return GRID.template get<I>();
+		return GRID.template cell<I>();
 	}
 	const std::vector<t_body> &body() const { return cell<3>(); }
 	const std::vector<t_face> &face() const { return cell<2>(); }
@@ -142,7 +158,7 @@ struct t_mesh {
 	const std::vector<t_vert> &vert() const { return VERT; }
 
 	template <unsigned I> const t_cell<I> &cell(int i) const {
-		return GRID.template get<I>()[i];
+		return GRID.template cell<I>()[i];
 	}
 	const t_body &body(int i) const { return cell<3>(i); }
 	const t_face &face(int i) const { return cell<2>(i); }
@@ -151,10 +167,10 @@ struct t_mesh {
 
 protected:
 	template <unsigned I> void set(const std::vector<t_cell<I>> &it) {
-		GRID.template get<I>() = it;
+		GRID.template cell<I>() = it;
 	}
 	template <unsigned I> void set(std::vector<t_cell<I>> &&it) {
-		GRID.template get<I>() = std::move(it);
+		GRID.template cell<I>() = std::move(it);
 	}
 	void set(const std::vector<t_vert> &vt) {
 		VERT = vt;
