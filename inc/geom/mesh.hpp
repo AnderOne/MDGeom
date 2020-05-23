@@ -20,12 +20,12 @@ typedef t_cell<2> t_face;
 typedef t_cell<1> t_edge;
 
 //Forward declarations:
-template <typename T, unsigned N, unsigned M>
-struct t_mesh;
-template <typename T, unsigned N, unsigned M>
+template <typename T, unsigned N, unsigned M, unsigned K>
+struct t_iter;
+template <typename T, unsigned N, unsigned M, unsigned K>
 struct t_part;
 template <typename T, unsigned N, unsigned M>
-struct t_iter;
+struct t_mesh;
 
 template <unsigned N>
 struct t_grid;
@@ -117,131 +117,119 @@ template <> struct
 t_grid<0> {};
 
 //Iterator:
-template <typename T, unsigned N, unsigned M>
-struct t_iter {
+template <typename T, unsigned N, unsigned M, unsigned K> struct t_iter {
 
-	bool operator==(const t_iter &other) const { return ind == other.ind; }
-	bool operator!=(const t_iter &other) const { return ind != other.ind; }
+	typedef MESH::t_part<T, N, M, K> t_part;
+	typedef MESH::t_mesh<T, N, M> t_mesh;
 
-	t_part<T, N, M> operator->() const { return t_part<T, N, M>(VERT, GRID.template grid<M>(), ITEM[ind]); }
-	t_part<T, N, M> operator*() const { return t_part<T, N, M>(VERT, GRID.template grid<M>(), ITEM[ind]); }
+	bool operator==(const t_iter &other) const { return ITEM == other.ITEM; }
+	bool operator!=(const t_iter &other) const { return ITEM != other.ITEM; }
 
-	t_iter  operator++(int) { t_iter iter(*this); ++ ind; return iter; }
-	t_iter  operator--(int) { t_iter iter(*this); -- ind; return iter; }
-	t_iter &operator++() { ++ ind; return *this; }
-	t_iter &operator--() { -- ind; return *this; }
+	const t_part *operator->() const { return &PART; }
+	const t_part &operator*() const { return PART; }
 
-private:
-	template <typename _T, unsigned _N, unsigned _M>
-	friend struct t_mesh;
-	template <typename _T, unsigned _N, unsigned _M>
-	friend struct t_part;
-
-	t_iter(const std::vector<t_vert<T, N>> &_vert, const int *_item, const t_grid<M> &_grid, int _ind): VERT(_vert), ITEM(_item), GRID(_grid), ind(_ind) {}
-
-	const std::vector<t_vert<T, N>> &VERT;
-	const int *ITEM;
-	const t_grid<M> &GRID;
-	int ind;
-};
-
-template <typename T, unsigned N>
-struct t_iter<T, N, 0> {
-
-	bool operator==(const t_iter &other) const { return ind == other.ind; }
-	bool operator!=(const t_iter &other) const { return ind != other.ind; }
-
-	t_part<T, N, 0> operator->() const { return t_part<T, N, 0>(VERT, ITEM[ind]); }
-	t_part<T, N, 0> operator*() const { return t_part<T, N, 0>(VERT, ITEM[ind]); }
-
-	t_iter  operator++(int) { t_iter iter(*this); ++ ind; return iter; }
-	t_iter  operator--(int) { t_iter iter(*this); -- ind; return iter; }
-	t_iter &operator++() { ++ ind; return *this; }
-	t_iter &operator--() { -- ind; return *this; }
+	t_iter  operator++(int) { t_iter iter(*this); next(); return iter; }
+	t_iter  operator--(int) { t_iter iter(*this); prev(); return iter; }
+	t_iter &operator++() { next(); return *this; }
+	t_iter &operator--() { prev(); return *this; }
 
 private:
-	template <typename _T, unsigned _N, unsigned _M>
-	friend struct t_mesh;
-	template <typename _T, unsigned _N, unsigned _M>
-	friend struct t_part;
+	template <typename _T, unsigned _N, unsigned _M, unsigned _K>
+	friend struct MESH::t_iter;
+	template <typename _T, unsigned _N, unsigned _M, unsigned _K>
+	friend struct MESH::t_part;
+	template <typename _T, unsigned _N, unsigned _K>
+	friend struct MESH::t_mesh;
 
-	t_iter(const std::vector<t_vert<T, N>> &_vert, const int *_item, const t_grid<0> &_grid, int _ind): VERT(_vert), ITEM(_item), ind(_ind) {}
+	void next() { PART.ind = *(++ ITEM); }
+	void prev() { PART.ind = *(-- ITEM); }
 
-	const std::vector<t_vert<T, N>> &VERT;
+	t_iter(const t_mesh &_mesh, const int *_item, int _ind, bool _val = true):
+	    ITEM(_item + _ind),
+	    PART(_mesh) {
+	    if (_val) PART.ind = ITEM[_ind];
+	}
+
 	const int *ITEM;
-	int ind;
+	t_part PART;
 };
 
 //Proxy:
-template <typename T, unsigned N, unsigned M>
-struct t_part {
+template <typename T, unsigned N, unsigned M, unsigned K> struct t_part {
 
-	t_iter<T, N, M - 1> begin() const {
-		return t_iter<T, N, M - 1>(
-		VERT, GRID.template cell<M>()[ind].data(), GRID.template grid<M - 1>(), 0
-		);
+	typedef MESH::t_mesh<T, N, M> t_mesh;
+
+	t_iter<T, N, M, K-1> begin() const {
+		return t_iter<T, N, M, K-1>(MESH, MESH.template cell<K>()[ind].data(), 0);
 	}
-	t_iter<T, N, M - 1> end() const {
-		return t_iter<T, N, M - 1>(
-		VERT, GRID.template cell<M>()[ind].data(), GRID.template grid<M - 1>(),
-		GRID.template cell<M>()[ind].size()
+	t_iter<T, N, M, K-1> end() const {
+		return t_iter<T, N, M, K-1>(MESH, MESH.template cell<K>()[ind].data(),
+		MESH.template cell<K>()[ind].size(), false
 		);
 	}
 
-	const t_cell<M> &cell() const { return GRID.template cell<M>()[ind]; }
-	int cell(int i) const { return GRID.template cell<M>()[ind][i]; }
+	const t_cell<K> &cell() const { return MESH.template cell<K>()[ind]; }
+	int cell(int i) const { return MESH.template cell<K>()[ind][i]; }
 
 	int id() const { return ind; }
 
 private:
-	template <typename _T, unsigned _N, unsigned _M>
-	friend struct t_mesh;
-	template <typename _T, unsigned _N, unsigned _M>
-	friend struct t_part;
-	template <typename _T, unsigned _N, unsigned _M>
-	friend struct t_iter;
+	template <typename _T, unsigned _N, unsigned _M, unsigned _K>
+	friend struct MESH::t_iter;
+	template <typename _T, unsigned _N, unsigned _M, unsigned _K>
+	friend struct MESH::t_part;
+	template <typename _T, unsigned _N, unsigned _K>
+	friend struct MESH::t_mesh;
 
-	t_part(const std::vector<t_vert<T, N>> &_vert, const t_grid<M> &_grid, int _ind): VERT(_vert), GRID(_grid), ind(_ind) {}
+	t_part(const t_mesh &_mesh, int _ind):
+	       MESH(_mesh), ind(_ind) {}
+	t_part(const t_mesh &_mesh):
+	       MESH(_mesh) {}
 
-	const std::vector<t_vert<T, N>> &VERT;
-	const t_grid<M> &GRID;
+	const t_mesh &MESH;
 	int ind;
 };
 
-template <typename T, unsigned N>
-struct t_part<T, N, 0> {
+template <typename T, unsigned N, unsigned M> struct t_part<T, N, M, 0> {
 
-	const t_vert<T, N> &data() const { return VERT[ind]; }
+	typedef MESH::t_mesh<T, N, M> t_mesh;
+
+	const t_vert<T, N> &data() const { return MESH.vert()[ind]; }
 	int id() const { return ind; }
 
 private:
-	template <typename _T, unsigned _N, unsigned _M>
-	friend struct t_mesh;
-	template <typename _T, unsigned _N, unsigned _M>
-	friend struct t_part;
-	template <typename _T, unsigned _N, unsigned _M>
-	friend struct t_iter;
+	template <typename _T, unsigned _N, unsigned _M, unsigned _K>
+	friend struct MESH::t_iter;
+	template <typename _T, unsigned _N, unsigned _M, unsigned _K>
+	friend struct MESH::t_part;
+	template <typename _T, unsigned _N, unsigned _K>
+	friend struct MESH::t_mesh;
 
-	t_part(const std::vector<t_vert<T, N>> &_vert, int _ind): VERT(_vert), ind(_ind) {}
+	t_part(const t_mesh &_mesh, int _ind):
+	      MESH(_mesh), ind(_ind) {}
+	t_part(const t_mesh &_mesh):
+	      MESH(_mesh) {}
 
-	const std::vector<t_vert<T, N>> &VERT;
+	const t_mesh &MESH;
 	int ind;
 };
 
 //Mesh structures:
-template <typename T, unsigned N, unsigned M = N - 1>
-struct t_mesh {
+template <typename T, unsigned N, unsigned M = N - 1> struct t_mesh {
 
+	template<unsigned K> using t_iter = MESH::t_iter<T, N, M, K>;
+	template<unsigned K> using t_part = MESH::t_part<T, N, M, K>;
 	typedef MESH::t_vert<T, N> t_vert;
 
 	static_assert(N >= M, "Mesh dimension must not be more than space dimension!");
 
 	template <typename ... TT> t_mesh(const std::vector<t_vert> &vert, TT && ... args):
-	                           VERT(vert), GRID(std::move(t_hand<M, 1>::make(std::forward<TT>(args) ...))) { init(); }
+	VERT(vert),
+	GRID(std::move(t_hand<M, 1>::make(std::forward<TT>(args) ...))) { init(); }
 
 	template <typename ... TT> t_mesh(std::vector<t_vert> &&vert, TT && ... args):
-	                           VERT(std::move(vert)),
-	                           GRID(std::move(t_hand<M, 1>::make(std::forward<TT>(args) ...))) { init(); }
+	VERT(std::move(vert)),
+	GRID(std::move(t_hand<M, 1>::make(std::forward<TT>(args) ...))) { init(); }
 
 	t_mesh() {}
 
@@ -266,20 +254,18 @@ struct t_mesh {
 	const std::vector<t_edge> &edge() const { return cell<1>(); }
 	const std::vector<t_vert> &vert() const { return VERT; }
 
-	template <unsigned I> t_part<T, N, I> cell(int i) const {
-		return t_part<T, N, I>(VERT, GRID.template grid<I>(), i);
-	}
-	t_part<T, N, 3> body(int i) const { return cell<3>(i); }
-	t_part<T, N, 2> face(int i) const { return cell<2>(i); }
-	t_part<T, N, 1> edge(int i) const { return cell<1>(i); }
-	const t_vert &vert(int i) const { return VERT[i]; }
+	template <unsigned I> t_part<I> cell(int i) const { return t_part<I>(*this, i); }
+	t_part<3> body(int i) const { return cell<3>(i); }
+	t_part<2> face(int i) const { return cell<2>(i); }
+	t_part<1> edge(int i) const { return cell<1>(i); }
+	t_part<0> vert(int i) const { return cell<0>(i); }
 
-	t_iter<T, N, M> begin() const {
-		return t_iter<T, N, M>(VERT, ITEM.data(), GRID, 0);
+	t_iter<M> begin() const {
+		return t_iter<M>(*this, ITEM.data(), 0);
 	}
-	t_iter<T, N, M> end() const {
-		return t_iter<T, N, M>(
-		VERT, ITEM.data(), GRID, ITEM.size()
+	t_iter<M> end() const {
+		return t_iter<M>(
+		*this, ITEM.data(), ITEM.size(), false
 		);
 	}
 
@@ -298,6 +284,11 @@ protected:
 	}
 
 private:
+	template <typename _T, unsigned _N, unsigned _M>
+	friend struct MESH::t_iter;
+	template <typename _T, unsigned _N, unsigned _M>
+	friend struct MESH::t_part;
+
 	void init() {
 		ITEM.resize(GRID.template cell<M>().size());
 		std::iota(ITEM.begin(), ITEM.end(), 0);
