@@ -282,7 +282,10 @@ struct t_vector {
 		);
 	}
 	inline const T len() const {
-		return sqrt(dot(*this));
+		return std::sqrt(len2());
+	}
+	inline const T len2() const {
+		return dot(*this);
 	}
 
 	inline t_vector<T, N> &operator+=(const t_vector<T, N> &rhs) {
@@ -334,105 +337,80 @@ private:
 template <typename T, unsigned N, unsigned M>
 struct t_basis {
 
+	typedef BASE::t_vector<T, N> t_vector;
+
 	__CHECK_TEMPLATE_POINT_TYPE(T)
 	__CHECK_TEMPLATE_POINT_DIM(N)
 	__CHECK_TEMPLATE_POINT_DIM(M)
 
 	static_assert(N >= M, "Subspace dimension must not be more owner dimension!");
 
+	template <typename... TT,
+	          typename = typename std::enable_if<(sizeof...(TT) == M)>::type>
+	inline t_basis(TT && ... arg): vec{static_cast<t_vector> (arg) ...} {
+		//Orthogonalization:
+		for (int i = 1; i < M; ++ i) {
+			BASE::t_vector<T, N> res = vec[i];
+			for (int k = 0; k < i; ++ k) {
+				res -= vec[k].dot(vec[i]) * vec[k] / vec[k].len2();
+			}
+			vec[i] = std::move(res);
+		}
+		//Normalization:
+		for (int i = 0; i < M; ++ i) vec[i] /= vec[i].len();
+	}
+
 	//Construct uniform basis:
 	inline t_basis(): top(0) {
 
-		for (int i = 0; i < NM; ++ i) {
-			for (int k = i + 1; k < N; ++ k) {
-				vec[i][k] = T(0);
-			}
-			for (int k = 0; k < i; ++ k) {
-				vec[i][k] = T(0);
-			}
+		std::fill(vec.begin(), vec.end(), T(0));
+		for (int i = 0; i < M; ++ i) {
 			vec[i][i] = T(1);
 		}
 	}
 
-	/*inline t_basis(...) {
-		//...
-		ext();
-		ort();
-	}*/
-
 	//Basis transform:
-	template <typename ... TT> inline t_basis rot(TT ... args) const {
-		t_basis ans; ans.top = top.rot(args ...);
-		for (int i = 0; i < NM; ++ i) {
-			ans.vec[i] = top.add(vec[i]).rot(args ...).sub(ans.top);
+	template <typename ... TT> inline t_basis rot(TT ... arg) const {
+		t_basis ans; ans.top = top.rot(arg ...);
+		for (int i = 0; i < M; ++ i) {
+			ans.vec[i] = top.add(vec[i]).rot(arg ...).sub(ans.top);
 		}
 		return ans;
 	}
-	template <typename ... TT> inline t_basis mov(TT ... args) const {
+	template <typename ... TT> inline t_basis mov(TT ... arg) const {
 		t_basis ans;
-		std::copy(vec, vec + NM, ans.vec);
-		ans.top = top.mov(args ...);
+		std::copy(vec, vec + M, ans.vec);
+		ans.top = top.mov(arg ...);
 		return ans;
 	}
 
-
 	//Project N-d point into basis of M-d subspace:
-	inline t_vector<T, M> put(const t_vector<T, N> &arg) const {
-		t_vector<T, N> rad = arg.sub(top);
-		t_vector<T, M> ans;
+	inline BASE::t_vector<T, M> put(const t_vector &arg) const {
+		BASE::t_vector<T, N> rad = arg.sub(top);
+		BASE::t_vector<T, M> ans;
 		for (int i = 0; i < M; ++ i) ans[i] = rad.dot(vec[i]);
 		return ans;
 	}
-
 	//Expand point from basis to world coordinates:
-	inline t_vector<T, N> get(const t_vector<T, M> &arg) const {
-		t_vector<T, N> ans = top;
+	inline t_vector get(const BASE::t_vector<T, M> &arg) const {
+		t_vector ans = top;
 		for (int i = 0; i < M; ++ i) {
 			ans = ans.add(vec[i].mul(arg[i]));
 		}
 		return ans;
 	}
 
-	//...
-	const t_vector<T, N> &operator[](int i) const {
-		return vec[i];
-	}
-	template <typename ... F,
-	          typename = typename std::enable_if<
-	          ((sizeof ... (F) == 0) && (M < N))
-	         >::type>
-	const t_vector<T, N> &normal() const {
-		return vec[M];
-	}
-	const t_vector<T, N> &center() const {
-		return top;
+	const t_vector &operator[](int i) const { return vec[i]; }
+	const t_vector &center() const { return top; }
+
+	const auto *begin() const { return vec; }
+	const auto *end() const {
+		return vec + M;
 	}
 
 private:
-	//Build orthogonal extension:
-	inline void ext() {
-		if (M < N) {
-			//TODO: Построить ортогональное дополнение к подпространству!
-			//Решить однородную СЛАУ методом Гаусса;
-			//...
-		}
-	}
-	//Orthogonalization:
-	inline void ort() {
-		for (int i = 1; i < NM; ++ i) {
-			T s = vec[i];
-			for (int k = 0; k < i; ++ k) {
-				s += vec[k].dot(vec[i]) *
-				     vec[k] /
-				     vec[k].len();
-			}
-			vec[i] = s;
-		}
-	}
-
-	constexpr static int NM = M + (M < N);
-	t_vector<T, N> vec[NM];
-	t_vector<T, N> top;
+	t_vector vec[M];
+	t_vector top;
 };
 
 //...
