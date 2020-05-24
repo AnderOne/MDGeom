@@ -69,6 +69,8 @@ struct t_vector;
 template <typename T, unsigned N, unsigned M = N>
 struct t_basis;
 
+#define MATH_EPSILON (1.e-14)
+
 //Matrix of linear transformation:
 template <typename T, unsigned N>
 struct t_matrix {
@@ -345,28 +347,14 @@ struct t_basis {
 
 	static_assert(N >= M, "Subspace dimension must not be more owner dimension!");
 
-	template <typename... TT,
-	          typename = typename std::enable_if<(sizeof...(TT) == M)>::type>
+	template <typename... TT, typename = typename std::enable_if<(sizeof...(TT) == M)>::type>
 	inline t_basis(TT && ... arg): vec{static_cast<t_vector> (arg) ...} {
-		//Orthogonalization:
-		for (int i = 1; i < M; ++ i) {
-			BASE::t_vector<T, N> res = vec[i];
-			for (int k = 0; k < i; ++ k) {
-				res -= vec[k].dot(vec[i]) * vec[k] / vec[k].len2();
-			}
-			vec[i] = std::move(res);
-		}
-		//Normalization:
-		for (int i = 0; i < M; ++ i) vec[i] /= vec[i].len();
+		this->template ort<false>(0);
 	}
 
 	//Construct uniform basis:
 	inline t_basis(): top(0) {
-
-		std::fill(vec.begin(), vec.end(), T(0));
-		for (int i = 0; i < M; ++ i) {
-			vec[i][i] = T(1);
-		}
+		std::fill(vec, vec + M, T(0)); for (int i = 0; i < M; ++ i) vec[i][i] = T(1);
 	}
 
 	//Basis transform:
@@ -382,6 +370,22 @@ struct t_basis {
 		std::copy(vec, vec + M, ans.vec);
 		ans.top = top.mov(arg ...);
 		return ans;
+	}
+
+	//Orthogonal complement:
+	template <unsigned K, typename = typename std::enable_if<(K <= N) && (K > M)>::type>
+	t_basis<T, N, K> ext() const {
+
+		t_basis<T, N, K> basis; for (int i = 0; i < M; ++ i) basis.vec[i] = vec[i];
+		basis.top = top;
+
+		for (int k = M, i = 0; (k < N + K) && (i < N); ++ i) {
+			basis.vec[k] = 0; basis.vec[k][i] = T(1);
+			if (basis.template ort<true>(k - 1)) {
+				++ k;
+			}
+		}
+		return basis;
 	}
 
 	//Project N-d point into basis of M-d subspace:
@@ -409,6 +413,34 @@ struct t_basis {
 	}
 
 private:
+	template <typename _T, unsigned _N, unsigned _M> friend struct t_basis;
+
+	template <bool CHECK_DIV0 = false> inline bool ort(int _start) {
+
+		std::array<T, M> L2;
+		for (int i = 0; i <= _start; ++ i) L2[i] = vec[i].len2();
+
+		//Orthogonalization:
+		for (int i = _start + 1; i < M; ++ i) {
+			BASE::t_vector<T, N> res = vec[i];
+			for (int k = 0; k < i; ++ k) {
+				res -= (vec[k].dot(vec[i]) / L2[k]) * vec[k];
+			}
+			if (CHECK_DIV0 && (res.len2() < MATH_EPSILON)) {
+				return false;
+			}
+			vec[i] = std::move(res);
+			L2[i] = res.len2();
+		}
+
+		//Normalization:
+		for (int i = _start; i < M; ++ i) {
+			vec[i] /= std::sqrt(L2[i]);
+		}
+
+		return true;
+	}
+
 	t_vector vec[M];
 	t_vector top;
 };
