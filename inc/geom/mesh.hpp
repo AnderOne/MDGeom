@@ -20,7 +20,7 @@
 
 #pragma once
 #include "base.hpp"
-#include <valarray>
+#include <memory>
 #include <vector>
 #include <array>
 #include <map>
@@ -359,44 +359,65 @@ template <typename T, unsigned N, unsigned M = N> struct t_mesh {
 
 	static_assert(N >= M, "Mesh dimension must not be more than space dimension!");
 
-	template <typename ... TT>
-	t_mesh(const std::vector<t_vert> &vert, TT && ... args):
-	VERT(vert), GRID(std::move(
-	t_hand<M, 1>::make(std::forward<TT>(args) ...))
-	) { init(); }
+	template <typename ... TT> t_mesh(const std::vector<t_vert> &vert, TT && ... args) {
+		DATA.VERT = std::make_shared<std::vector<t_vert>>(vert);
+		DATA.GRID = std::make_shared<t_grid>();
+		DATA.GRID->GRID = t_hand<M, 1>::make(
+			std::forward<TT>(args) ... );
+		DATA.GRID->ITEM.resize(
+		DATA.GRID->GRID.template cell<M>().size());
+		std::iota(
+		DATA.GRID->ITEM.begin(),
+		DATA.GRID->ITEM.end(), 0
+		);
+	}
 
-	template <typename ... TT>
-	t_mesh(std::vector<t_vert> &&vert, TT && ... args):
-	VERT(std::move(vert)),
-	GRID(std::move(
-	t_hand<M, 1>::make(std::forward<TT>(args) ...))
-	) { init(); }
+	template <typename ... TT> t_mesh(std::vector<t_vert> &&vert, TT && ... args) {
+		DATA.VERT = std::make_shared<std::vector<t_vert>>(
+			std::move(vert));
+		DATA.GRID = std::make_shared<t_grid>();
+		DATA.GRID->GRID = t_hand<M, 1>::make(
+			std::forward<TT>(args) ... );
+		DATA.GRID->ITEM.resize(
+		DATA.GRID->GRID.template cell<M>().size());
+		std::iota(
+		DATA.GRID->ITEM.begin(),
+		DATA.GRID->ITEM.end(), 0
+		);
+	}
 
 	t_mesh() {}
 
 	//Data transform:
 	void rot(const t_vector<T, N> &center, int xaxis, int yaxis, T angle) {
-		for (auto &v : VERT) v = v.rot(center, xaxis, yaxis, angle);
+		if (!DATA.VERT.unique()) DATA.VERT = std::make_shared<std::vector<t_vert>>(*DATA.VERT);
+		for (auto &v : *DATA.VERT) v = v.rot(center, xaxis, yaxis, angle);
 	}
+
 	void rot(const t_basis<T, N> &basis, int xaxis, int yaxis, T angle) {
-		for (auto &v : VERT) v = v.rot(basis, xaxis, yaxis, angle);
+		if (!DATA.VERT.unique()) DATA.VERT = std::make_shared<std::vector<t_vert>>(*DATA.VERT);
+		for (auto &v : *DATA.VERT) v = v.rot(basis, xaxis, yaxis, angle);
 	}
+
 	void rot(int xaxis, int yaxis, T angle) {
-		for (auto &v : VERT) v = v.rot(xaxis, yaxis, angle);
+		if (!DATA.VERT.unique()) DATA.VERT = std::make_shared<std::vector<t_vert>>(*DATA.VERT);
+		for (auto &v : *DATA.VERT) v = v.rot(xaxis, yaxis, angle);
 	}
+
 	void mov(const t_vector<T, N> &dir) {
-		for (auto &v : VERT) v = v.mov(dir);
+		if (!DATA.VERT.unique()) DATA.VERT = std::make_shared<std::vector<t_vert>>(*DATA.VERT);
+		for (auto &v : *DATA.VERT) v = v.mov(dir);
 	}
 
 	//Data access:
-	template <unsigned I> const std::vector<std::vector<int>> &link() const { return GRID.template link<I>(); }
+	template <unsigned I> const std::vector<std::vector<int>> &link() const { return DATA.GRID->GRID.template link<I>(); }
 	template <unsigned I> t_link<I> link(int i) const { return t_link<I>(*this, i); }
 
-	template <unsigned I> const std::vector<t_cell<I>> &cell() const { return GRID.template cell<I>(); }
+	template <unsigned I> const std::vector<t_cell<I>> &cell() const { return DATA.GRID->GRID.template cell<I>(); }
 	const std::vector<t_body> &body() const { return cell<3>(); }
 	const std::vector<t_face> &face() const { return cell<2>(); }
 	const std::vector<t_edge> &edge() const { return cell<1>(); }
-	const std::vector<t_vert> &vert() const { return VERT; }
+	const std::vector<t_vert> &vert() const { return *DATA.VERT; }
 
 	template <unsigned I> t_part<I> cell(int i) const { return t_part<I>(*this, i); }
 	t_part<3> body(int i) const { return cell<3>(i); }
@@ -405,26 +426,12 @@ template <typename T, unsigned N, unsigned M = N> struct t_mesh {
 	t_part<0> vert(int i) const { return cell<0>(i); }
 
 	t_iter<M> begin() const {
-		return t_iter<M>(*this, ITEM.data(), 0);
+		return t_iter<M>(*this, DATA.GRID->ITEM.data(), 0);
 	}
 	t_iter<M> end() const {
-		return t_iter<M>(
-		*this, ITEM.data(), ITEM.size(), false
+		return t_iter<M>(*this, DATA.GRID->ITEM.data(),
+		DATA.GRID->ITEM.size(), false
 		);
-	}
-
-protected:
-	template <unsigned I> void set(const std::vector<t_cell<I>> &it) {
-		GRID.template cell<I>() = it;
-	}
-	template <unsigned I> void set(std::vector<t_cell<I>> &&it) {
-		GRID.template cell<I>() = std::move(it);
-	}
-	void set(const std::vector<t_vert> &vt) {
-		VERT = vt;
-	}
-	void set(std::vector<t_vert> &&vt) {
-		VERT = std::move(vt);
 	}
 
 private:
@@ -435,14 +442,13 @@ private:
 	template <typename _T, unsigned _N, unsigned _M>
 	friend struct MESH::t_part;
 
-	void init() {
-		ITEM.resize(GRID.template cell<M>().size());
-		std::iota(ITEM.begin(), ITEM.end(), 0);
-	}
+	struct t_grid { MESH::t_grid<M> GRID; std::vector<int> ITEM; };
+	struct t_data {
+		std::shared_ptr<std::vector<t_vert>> VERT;
+		std::shared_ptr<t_grid> GRID;
+	};
 
-	std::vector<t_vert> VERT;
-	std::vector<int> ITEM;
-	t_grid<M> GRID;
+	t_data DATA;
 };
 
 //...
