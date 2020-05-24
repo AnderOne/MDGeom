@@ -184,6 +184,14 @@ struct t_matrix {
 		return *this;
 	}
 
+	//Comparison:
+	inline bool operator != (const t_matrix &rhs) const {
+		return !std::equal(dat, dat + N * N, rhs.dat);
+	}
+	inline bool operator == (const t_matrix &rhs) const {
+		return std::equal(dat, dat + N * N, rhs.dat);
+	}
+
 	//Data access:
 	inline const T *operator[] (int i) const {
 		return dat + i * N;
@@ -292,6 +300,14 @@ struct t_vector {
 	inline t_vector<T, N> &operator/=(const T &val) {
 		*this = this->div(val);
 		return *this;
+	}
+
+	//Comparison:
+	inline bool operator != (const t_vector &rhs) const {
+		return !std::equal(dat, dat + N, rhs.dat);
+	}
+	inline bool operator == (const t_vector &rhs) const {
+		return std::equal(dat, dat + N, rhs.dat);
 	}
 
 	inline const T &operator[] (int i) const {
