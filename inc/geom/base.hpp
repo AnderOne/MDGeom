@@ -66,7 +66,8 @@ struct t_matrix;
 template <typename T, unsigned N>
 struct t_vector;
 
-template <typename T, unsigned N, unsigned M = N>
+template <typename T, unsigned N,
+unsigned M = N>
 struct t_basis;
 
 #define MATH_EPSILON (1.e-14)
@@ -85,62 +86,10 @@ struct t_matrix {
 	inline t_matrix(const T &val) { std::fill(dat, dat + N * N, val); }
 	inline t_matrix() {}
 
-	inline t_matrix<T, N> mul(const t_matrix<T, N> &rhs) const {
-		t_matrix<T, N> ans;
-		for (int i = 0; i < N; ++ i) for (int j = 0; j < N; ++ j) {
-			ans[i][j] = row(i).dot(rhs.col(j));
-		}
-		return ans;
-	}
-
-	inline t_vector<T, N> mul(const t_vector<T, N> &rhs) const {
-		t_vector<T, N> ans;
-		for (int i = 0; i < N; ++ i) {
-			ans[i] = row(i).dot(rhs);
-		}
-		return ans;
-	}
-
-	inline t_matrix<T, N> sub(const t_matrix<T, N> &rhs) const {
-		t_matrix<T, N> ans;
-		__DEF_TRANSFORM_2(ans, (*this), rhs, -)
-		return ans;
-	}
-	inline t_matrix<T, N> add(const t_matrix<T, N> &rhs) const {
-		t_matrix<T, N> ans;
-		__DEF_TRANSFORM_2(ans, (*this), rhs, +)
-		return ans;
-	}
-	inline t_matrix<T, N> div(const T &val) const {
-		t_matrix<T, N> ans;
-		__DEF_TRANSFORM_1(ans, (*this), val, /)
-		return ans;
-	}
-	inline t_matrix<T, N> mul(const T &val) const {
-		t_matrix<T, N> ans;
-		__DEF_TRANSFORM_1(ans, (*this), val, *)
-		return ans;
-	}
-	inline t_matrix<T, N> neg() const {
-		t_matrix<T, N> ans;
-		__DEF_TRANSFORM_1(ans, (*this), -1, *)
-		return ans;
-	}
-
-	inline t_vector<T, N> row(int i) const {
-		t_vector<T, N> ans;
-		for (int k = 0; k < N; ++ k) {
-			ans[k] = (*this)[i][k];
-		}
-		return ans;
-	}
-
-	inline t_vector<T, N> col(int i) const {
-		t_vector<T, N> ans;
-		for (int k = 0; k < N; ++ k) {
-			ans[k] = (*this)[k][i];
-		}
-		return ans;
+	template <typename ... TT,
+	          typename = typename std::enable_if<(sizeof ... (TT) == 0) && (N == 1)>::type>
+	inline operator T() const {
+		return *dat;
 	}
 
 	//Get rotation matrix:
@@ -163,12 +112,60 @@ struct t_matrix {
 		return mat;
 	}
 
-	//Inverse matrix:
-	inline t_matrix<T, N> inv() const;
+	//Matrix operations:
+	inline t_matrix<T, N> mul(const t_matrix<T, N> &rhs) const {
+		t_matrix<T, N> ans;
+		for (int i = 0; i < N; ++ i) for (int j = 0; j < N; ++ j) {
+			ans[i][j] = row(i).dot(rhs.col(j));
+		}
+		return ans;
+	}
+	inline t_vector<T, N> mul(const t_vector<T, N> &rhs) const {
+		t_vector<T, N> ans;
+		for (int i = 0; i < N; ++ i) {
+			ans[i] = row(i).dot(rhs);
+		}
+		return ans;
+	}
+	inline t_matrix<T, N> sub(const t_matrix<T, N> &rhs) const {
+		t_matrix<T, N> ans;
+		__DEF_TRANSFORM_2(ans, (*this), rhs, -);
+		return ans;
+	}
+	inline t_matrix<T, N> add(const t_matrix<T, N> &rhs) const {
+		t_matrix<T, N> ans;
+		__DEF_TRANSFORM_2(ans, (*this), rhs, +);
+		return ans;
+	}
 
-	//Determinant:
-	inline const T det() const;
+	//Mixed operations:
+	inline t_matrix<T, N> div(const T &val) const {
+		t_matrix<T, N> ans;
+		__DEF_TRANSFORM_1(ans, (*this), val, /);
+		return ans;
+	}
+	inline t_matrix<T, N> mul(const T &val) const {
+		t_matrix<T, N> ans;
+		__DEF_TRANSFORM_1(ans, (*this), val, *);
+		return ans;
+	}
+	inline t_matrix<T, N> sub(const T &val) const {
+		t_matrix<T, N> ans;
+		__DEF_TRANSFORM_1(ans, (*this), val, -);
+		return ans;
+	}
+	inline t_matrix<T, N> add(const T &val) const {
+		t_matrix<T, N> ans;
+		__DEF_TRANSFORM_1(ans, (*this), val, +);
+		return ans;
+	}
+	inline t_matrix<T, N> neg() const {
+		t_matrix<T, N> ans;
+		__DEF_TRANSFORM_1(ans, (*this), -1, *);
+		return ans;
+	}
 
+	//Assignment:
 	inline t_matrix<T, N> &operator+=(const t_matrix<T, N> &rhs) {
 		*this = this->add(rhs);
 		return *this;
@@ -195,6 +192,16 @@ struct t_matrix {
 	}
 
 	//Data access:
+	inline t_vector<T, N> row(int i) const {
+		t_vector<T, N> ans;
+		for (int k = 0; k < N; ++ k) ans[k] = (*this)[i][k];
+		return ans;
+	}
+	inline t_vector<T, N> col(int i) const {
+		t_vector<T, N> ans;
+		for (int k = 0; k < N; ++ k) ans[k] = (*this)[k][i];
+		return ans;
+	}
 	inline const T *operator[] (int i) const {
 		return dat + i * N;
 	}
@@ -210,6 +217,12 @@ struct t_matrix {
 	inline T *data() {
 		return dat;
 	}
+
+	//Inverse matrix:
+	inline t_matrix<T, N> inv() const;
+
+	//Determinant:
+	inline const T det() const;
 
 private:
 	T dat[N * N];
@@ -229,6 +242,13 @@ struct t_vector {
 	inline t_vector(const T &val) { std::fill(dat, dat + N, val); }
 	inline t_vector() {}
 
+	template <typename ... TT,
+	          typename = typename std::enable_if<(sizeof ... (TT) == 0) && (N == 1)>::type>
+	inline operator T() const {
+		return *dat;
+	}
+
+	//Vector operations:
 	inline t_vector<T, N> rot(const t_vector<T, N> &center, int i, int j, T angle) const {
 		return this->sub(center).rot(i, j, angle).add(center);
 	}
@@ -248,33 +268,43 @@ struct t_vector {
 		return ans;
 	}
 
-	inline t_vector<T, N> mov(const t_vector<T, N> &dir) const {
-		return this->add(dir);
-	}
+	inline t_vector<T, N> mov(const t_vector<T, N> &dir) const { return this->add(dir); }
 
 	inline t_vector<T, N> sub(const t_vector<T, N> &rhs) const {
 		t_vector<T, N> ans;
-		__DEF_TRANSFORM_2(ans, (*this), rhs, -)
+		__DEF_TRANSFORM_2(ans, (*this), rhs, -);
 		return ans;
 	}
 	inline t_vector<T, N> add(const t_vector<T, N> &rhs) const {
 		t_vector<T, N> ans;
-		__DEF_TRANSFORM_2(ans, (*this), rhs, +)
+		__DEF_TRANSFORM_2(ans, (*this), rhs, +);
 		return ans;
 	}
+
+	//Mixed operations:
 	inline t_vector<T, N> div(const T &val) const {
 		t_vector<T, N> ans;
-		__DEF_TRANSFORM_1(ans, (*this), val, /)
+		__DEF_TRANSFORM_1(ans, (*this), val, /);
 		return ans;
 	}
 	inline t_vector<T, N> mul(const T &val) const {
 		t_vector<T, N> ans;
-		__DEF_TRANSFORM_1(ans, (*this), val, *)
+		__DEF_TRANSFORM_1(ans, (*this), val, *);
+		return ans;
+	}
+	inline t_vector<T, N> sub(const T &val) const {
+		t_vector<T, N> ans;
+		__DEF_TRANSFORM_1(ans, (*this), val, -);
+		return ans;
+	}
+	inline t_vector<T, N> add(const T &val) const {
+		t_vector<T, N> ans;
+		__DEF_TRANSFORM_1(ans, (*this), val, +);
 		return ans;
 	}
 	inline t_vector<T, N> neg() const {
 		t_vector<T, N> ans;
-		__DEF_TRANSFORM_1(ans, (*this), -1, *)
+		__DEF_TRANSFORM_1(ans, (*this), -1, *);
 		return ans;
 	}
 
@@ -290,6 +320,7 @@ struct t_vector {
 		return dot(*this);
 	}
 
+	//Assignment:
 	inline t_vector<T, N> &operator+=(const t_vector<T, N> &rhs) {
 		*this = this->add(rhs);
 		return *this;
@@ -315,6 +346,7 @@ struct t_vector {
 		return std::equal(dat, dat + N, rhs.dat);
 	}
 
+	//Data access:
 	inline const T &operator[] (int i) const {
 		return dat[i];
 	}
@@ -447,35 +479,29 @@ private:
 
 //...
 
-#define __DEF_BINARY_2(TYPE, L_TYPE, R_TYPE, S, C)\
+#define __DEF_BINARY_2(Q, LQ, RQ, S, C)\
 template <typename T, unsigned N>\
-TYPE<T, N> operator C(const L_TYPE<T, N> &L, const R_TYPE<T, N> &R) {\
-	return L.S(R);\
-}
+Q<T, N> operator C(const LQ<T, N> &lhs, const RQ<T, N> &rhs) { return lhs.S(rhs); }
 
-#define __DEF_BINARY_0(L_TYPE, R_TYPE, S, C)\
+#define __DEF_BINARY_0(LQ, RQ, S, C)\
 template <typename T, unsigned N>\
-const T operator C(const L_TYPE<T, N> &L, const R_TYPE<T, N> &R) {\
-	return L.S(R);\
-}
+const T operator C(const LQ<T, N> &lhs, const RQ<T, N> &rhs) { return lhs.S(rhs); }
 
-#define __DEF_BINARY_R(TYPE, L_TYPE, S, C)\
-template <typename T, unsigned N>\
-TYPE<T, N> operator C(const L_TYPE<T, N> &L, const T &R) {\
-	return L.S(R);\
-}
+#define __DEF_BINARY_R(Q, LQ, S, C)\
+template <typename L, typename R,\
+                      unsigned N>\
+Q<L, N> operator C(const LQ<L, N> &lhs, const R &rhs) { return lhs.S(rhs); }
 
-#define __DEF_BINARY_L(TYPE, R_TYPE, S, C)\
-template <typename T, unsigned N>\
-TYPE<T, N> operator C(const T &L, const R_TYPE<T, N> &R) {\
-	return R.S(L);\
-}
+#define __DEF_BINARY_L(Q, RQ, S, C)\
+template <typename L, typename R,\
+                      unsigned N>\
+Q<R, N> operator C(const L &lhs, const RQ<R, N> &rhs) { return rhs.S(lhs); }
 
-#define __DEF_UNARY(TYPE, S, C)\
+#define __DEF_UNARY(Q, S, C)\
 template <typename T, unsigned N>\
-TYPE<T, N> operator C(const TYPE<T, N> &A) {\
-	return A.S();\
-}
+Q<T, N> operator C(const Q<T, N> &arg) { return arg.S(); }
+
+//...
 
 __DEF_BINARY_2(t_matrix, t_matrix, t_matrix, mul, *)
 __DEF_BINARY_2(t_vector, t_matrix, t_vector, mul, *)
@@ -489,25 +515,20 @@ __DEF_BINARY_0(t_vector, t_vector, dot, *)
 
 __DEF_BINARY_R(t_matrix, t_matrix, div, /)
 __DEF_BINARY_R(t_matrix, t_matrix, mul, *)
+__DEF_BINARY_R(t_matrix, t_matrix, sub, -)
+__DEF_BINARY_R(t_matrix, t_matrix, add, +)
 __DEF_BINARY_R(t_vector, t_vector, div, /)
 __DEF_BINARY_R(t_vector, t_vector, mul, *)
+__DEF_BINARY_R(t_vector, t_vector, sub, -)
+__DEF_BINARY_R(t_vector, t_vector, add, +)
 
 __DEF_BINARY_L(t_matrix, t_matrix, mul, *)
+__DEF_BINARY_L(t_matrix, t_matrix, add, +)
 __DEF_BINARY_L(t_vector, t_vector, mul, *)
+__DEF_BINARY_L(t_vector, t_vector, add, +)
 
 __DEF_UNARY(t_matrix, neg, -)
 __DEF_UNARY(t_vector, neg, -)
-
-#undef __CHECK_PARAMETER_PACK_SIZE
-#undef __CHECK_TEMPLATE_POINT_TYPE
-#undef __CHECK_TEMPLATE_POINT_DIM
-#undef __DEF_TRANSFORM_2
-#undef __DEF_TRANSFORM_1
-#undef __DEF_BINARY_2
-#undef __DEF_BINARY_0
-#undef __DEF_BINARY_R
-#undef __DEF_BINARY_L
-#undef __DEF_UNARY
 
 //...
 
@@ -527,10 +548,26 @@ std::ostream &operator<<(std::ostream &out, const t_vector<T, N> &vec) {
 
 //...
 
+#undef __CHECK_PARAMETER_PACK_SIZE
+#undef __CHECK_TEMPLATE_POINT_TYPE
+#undef __CHECK_TEMPLATE_POINT_DIM
+#undef __DEF_TRANSFORM_2
+#undef __DEF_TRANSFORM_1
+#undef __DEF_BINARY_2
+#undef __DEF_BINARY_0
+#undef __DEF_BINARY_R
+#undef __DEF_BINARY_L
+#undef __DEF_UNARY
+
+//...
+
 typedef BASE::t_matrix<double, 4> t_matrix_4d;
 typedef BASE::t_matrix<double, 3> t_matrix_3d;
+typedef BASE::t_matrix<double, 2> t_matrix_2d;
+
 typedef BASE::t_vector<double, 4> t_vector_4d;
 typedef BASE::t_vector<double, 3> t_vector_3d;
+typedef BASE::t_vector<double, 2> t_vector_2d;
 
 template <unsigned N>
 using t_space = t_basis<double, N, 3>;
