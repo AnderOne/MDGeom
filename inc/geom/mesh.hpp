@@ -350,7 +350,7 @@ private:
 };
 
 //Mesh structures:
-template <typename T, unsigned N, unsigned M = N - 1> struct t_mesh {
+template <typename T, unsigned N, unsigned M = N> struct t_mesh {
 
 	template<unsigned K> using t_iter = MESH::t_iter<T, N, M, K>;
 	template<unsigned K> using t_link = MESH::t_link<T, N, M, K>;
@@ -359,13 +359,18 @@ template <typename T, unsigned N, unsigned M = N - 1> struct t_mesh {
 
 	static_assert(N >= M, "Mesh dimension must not be more than space dimension!");
 
-	template <typename ... TT> t_mesh(const std::vector<t_vert> &vert, TT && ... args):
-	VERT(vert),
-	GRID(std::move(t_hand<M, 1>::make(std::forward<TT>(args) ...))) { init(); }
+	template <typename ... TT>
+	t_mesh(const std::vector<t_vert> &vert, TT && ... args):
+	VERT(vert), GRID(std::move(
+	t_hand<M, 1>::make(std::forward<TT>(args) ...))
+	) { init(); }
 
-	template <typename ... TT> t_mesh(std::vector<t_vert> &&vert, TT && ... args):
+	template <typename ... TT>
+	t_mesh(std::vector<t_vert> &&vert, TT && ... args):
 	VERT(std::move(vert)),
-	GRID(std::move(t_hand<M, 1>::make(std::forward<TT>(args) ...))) { init(); }
+	GRID(std::move(
+	t_hand<M, 1>::make(std::forward<TT>(args) ...))
+	) { init(); }
 
 	t_mesh() {}
 
@@ -442,10 +447,20 @@ private:
 
 //...
 
+template <unsigned N>
+using t_surf = MESH::t_mesh<double, N, N - 1>;
+
+typedef t_surf<4>
+t_surf_4d;
+typedef t_surf<3>
+t_surf_3d;
+
 typedef MESH::t_mesh<double, 4>
 t_mesh_4d;
 typedef MESH::t_mesh<double, 3>
 t_mesh_3d;
+typedef MESH::t_mesh<double, 2>
+t_mesh_2d;
 
 //...
 

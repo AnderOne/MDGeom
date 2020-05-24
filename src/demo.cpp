@@ -12,7 +12,7 @@ using namespace GEOM;
 int main() {
 
 	//Generate 3d-mesh by its elements:
-	std::vector<t_mesh_3d::t_vert> VERT{
+	std::vector<t_surf_3d::t_vert> VERT{
 		{0., 0., 0.}, {0., 0., 1.}, {0., 1., 0.}, {0., 1., 1.},
 		{1., 0., 0.}, {1., 0., 1.}, {1., 1., 0.}, {1., 1., 1.}
 	};
@@ -28,7 +28,7 @@ int main() {
 		{0, 3, 12}, {0, 4, 13}, {1, 5, 12},
 	};
 
-	t_mesh_3d mesh(
+	t_surf_3d mesh(
 	std::move(VERT), std::move(EDGE), std::move(FACE)
 	);
 
