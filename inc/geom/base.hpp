@@ -380,11 +380,14 @@ struct t_basis {
 	static_assert(N >= M, "Subspace dimension must not be more owner dimension!");
 
 	template <typename... TT, typename = typename std::enable_if<(sizeof...(TT) == M)>::type>
-	inline t_basis(TT && ... arg): vec{static_cast<t_vector> (arg) ...} {
+	inline t_basis(const t_vector &_top, TT && ... arg): top(_top), vec{t_vector{arg} ...} {
 		this->template ort<false>(0);
 	}
 
 	//Construct uniform basis:
+	inline t_basis(const t_vector &_top): top(_top) {
+		std::fill(vec, vec + M, T(0)); for (int i = 0; i < M; ++ i) vec[i][i] = T(1);
+	}
 	inline t_basis(): top(0) {
 		std::fill(vec, vec + M, T(0)); for (int i = 0; i < M; ++ i) vec[i][i] = T(1);
 	}
