@@ -44,8 +44,7 @@ static_assert(N > 0, "Dimension must not be lesser one!");
 
 #define __DEF_TRANSFORM_2(ans, lhs, rhs, op)\
 std::transform(\
-	lhs.data(), lhs.data() + lhs.size(),\
-	rhs.data(), ans.data(),\
+	lhs.begin(), lhs.end(), rhs.begin(), ans.begin(),\
 	[](const auto &a, const auto &b) {\
 	return a op b;\
 	}\
@@ -53,180 +52,23 @@ std::transform(\
 
 #define __DEF_TRANSFORM_1(ans, lhs, val, op)\
 std::transform(\
-	lhs.data(), lhs.data() + lhs.size(),\
-	ans.data(),\
+	lhs.begin(), lhs.end(), ans.begin(),\
 	[v = val](const auto &a) {\
 	return a op v;\
 	}\
 );
 
 template <typename T, unsigned N>
-struct t_matrix;
+struct t_vector;
 
 template <typename T, unsigned N>
-struct t_vector;
+struct t_matrix;
 
 template <typename T, unsigned N,
 unsigned M = N>
 struct t_basis;
 
 #define MATH_EPSILON (1.e-14)
-
-//Matrix of linear transformation:
-template <typename T, unsigned N>
-struct t_matrix {
-
-	__CHECK_TEMPLATE_POINT_TYPE(T)
-	__CHECK_TEMPLATE_POINT_DIM(N)
-
-	template <typename... TT, typename = typename std::enable_if<(sizeof...(TT) > 1)>::type>
-	inline t_matrix(TT... arg): dat{static_cast<T> (arg) ...} {
-		__CHECK_PARAMETER_PACK_SIZE(arg, N * N)
-	}
-	inline t_matrix(const T &val) { std::fill(dat, dat + N * N, val); }
-	inline t_matrix() {}
-
-	template <typename ... TT,
-	          typename = typename std::enable_if<(sizeof ... (TT) == 0) && (N == 1)>::type>
-	inline operator T() const {
-		return *dat;
-	}
-
-	//Get rotation matrix:
-	inline static t_matrix<T, N> getRotation(int i, int j, const T &angle) {
-
-		t_matrix mat = t_matrix::getIdentity();
-		mat[i][j] = - sin(angle);
-		mat[j][j] = cos(angle);
-		mat[j][i] = sin(angle);
-		mat[i][i] = cos(angle);
-		return mat;
-	}
-
-	//Get identity matrix:
-	inline static t_matrix<T, N> getIdentity() {
-		t_matrix<T, N> mat = T(0);
-		for (int i = 0; i < N; ++ i) {
-			mat[i][i] = T(1);
-		}
-		return mat;
-	}
-
-	//Matrix operations:
-	inline t_matrix<T, N> mul(const t_matrix<T, N> &rhs) const {
-		t_matrix<T, N> ans;
-		for (int i = 0; i < N; ++ i) for (int j = 0; j < N; ++ j) {
-			ans[i][j] = row(i).dot(rhs.col(j));
-		}
-		return ans;
-	}
-	inline t_vector<T, N> mul(const t_vector<T, N> &rhs) const {
-		t_vector<T, N> ans;
-		for (int i = 0; i < N; ++ i) {
-			ans[i] = row(i).dot(rhs);
-		}
-		return ans;
-	}
-	inline t_matrix<T, N> sub(const t_matrix<T, N> &rhs) const {
-		t_matrix<T, N> ans;
-		__DEF_TRANSFORM_2(ans, (*this), rhs, -);
-		return ans;
-	}
-	inline t_matrix<T, N> add(const t_matrix<T, N> &rhs) const {
-		t_matrix<T, N> ans;
-		__DEF_TRANSFORM_2(ans, (*this), rhs, +);
-		return ans;
-	}
-
-	//Mixed operations:
-	inline t_matrix<T, N> div(const T &val) const {
-		t_matrix<T, N> ans;
-		__DEF_TRANSFORM_1(ans, (*this), val, /);
-		return ans;
-	}
-	inline t_matrix<T, N> mul(const T &val) const {
-		t_matrix<T, N> ans;
-		__DEF_TRANSFORM_1(ans, (*this), val, *);
-		return ans;
-	}
-	inline t_matrix<T, N> sub(const T &val) const {
-		t_matrix<T, N> ans;
-		__DEF_TRANSFORM_1(ans, (*this), val, -);
-		return ans;
-	}
-	inline t_matrix<T, N> add(const T &val) const {
-		t_matrix<T, N> ans;
-		__DEF_TRANSFORM_1(ans, (*this), val, +);
-		return ans;
-	}
-	inline t_matrix<T, N> neg() const {
-		t_matrix<T, N> ans;
-		__DEF_TRANSFORM_1(ans, (*this), -1, *);
-		return ans;
-	}
-
-	//Assignment:
-	inline t_matrix<T, N> &operator+=(const t_matrix<T, N> &rhs) {
-		*this = this->add(rhs);
-		return *this;
-	}
-	inline t_matrix<T, N> &operator-=(const t_matrix<T, N> &rhs) {
-		*this = this->sub(rhs);
-		return *this;
-	}
-	inline t_matrix<T, N> &operator*=(const T &val) {
-		*this = this->mul(val);
-		return *this;
-	}
-	inline t_matrix<T, N> &operator/=(const T &val) {
-		*this = this->div(val);
-		return *this;
-	}
-
-	//Comparison:
-	inline bool operator != (const t_matrix &rhs) const {
-		return !std::equal(dat, dat + N * N, rhs.dat);
-	}
-	inline bool operator == (const t_matrix &rhs) const {
-		return std::equal(dat, dat + N * N, rhs.dat);
-	}
-
-	//Data access:
-	inline t_vector<T, N> row(int i) const {
-		t_vector<T, N> ans;
-		for (int k = 0; k < N; ++ k) ans[k] = (*this)[i][k];
-		return ans;
-	}
-	inline t_vector<T, N> col(int i) const {
-		t_vector<T, N> ans;
-		for (int k = 0; k < N; ++ k) ans[k] = (*this)[k][i];
-		return ans;
-	}
-	inline const T *operator[] (int i) const {
-		return dat + i * N;
-	}
-	inline T *operator[] (int i) {
-		return dat + i * N;
-	}
-	constexpr unsigned size() const {
-		return N * N;
-	}
-	inline const T *data() const {
-		return dat;
-	}
-	inline T *data() {
-		return dat;
-	}
-
-	//Inverse matrix:
-	inline t_matrix<T, N> inv() const;
-
-	//Determinant:
-	inline const T det() const;
-
-private:
-	T dat[N * N];
-};
 
 //N-dimensional vector:
 template <typename T, unsigned N>
@@ -239,28 +81,28 @@ struct t_vector {
 	inline t_vector(TT... arg): dat{static_cast<T> (arg) ...} {
 		__CHECK_PARAMETER_PACK_SIZE(arg, N)
 	}
-	inline t_vector(const T &val) { std::fill(dat, dat + N, val); }
+	inline t_vector(const T &val) { std::fill(dat.begin(), dat.end(), val); }
 	inline t_vector() {}
 
 	template <typename ... TT,
 	          typename = typename std::enable_if<(sizeof ... (TT) == 0) && (N == 1)>::type>
 	inline operator T() const {
-		return *dat;
+		return dat[0];
 	}
 
-	//Vector operations:
-	inline t_vector<T, N> rot(const t_vector<T, N> &center, int i, int j, T angle) const {
+	//Vector transformations:
+	inline t_vector rot(const t_vector<T, N> &center, int i, int j, T angle) const {
 		return this->sub(center).rot(i, j, angle).add(center);
 	}
 
-	inline t_vector<T, N> rot(const t_basis<T, N> &basis, int i, int j, T angle) const {
+	inline t_vector rot(const t_basis<T, N> &basis, int i, int j, T angle) const {
 		return basis.get(
 		basis.put(*this).rot(i, j, angle)
 		);
 	}
 
-	inline t_vector<T, N> rot(int i, int j, T angle) const {
-		t_vector<T, N> ans(*this);
+	inline t_vector rot(int i, int j, T angle) const {
+		t_vector ans(*this);
 		ans.dat[i] = cos(angle) * dat[i] -
 		sin(angle) * dat[j];
 		ans.dat[j] = sin(angle) * dat[i] +
@@ -268,103 +110,113 @@ struct t_vector {
 		return ans;
 	}
 
-	inline t_vector<T, N> mov(const t_vector<T, N> &dir) const { return this->add(dir); }
+	inline t_vector mov(const t_vector &dir) const {
+		return this->add(dir);
+	}
 
-	inline t_vector<T, N> sub(const t_vector<T, N> &rhs) const {
-		t_vector<T, N> ans;
-		__DEF_TRANSFORM_2(ans, (*this), rhs, -);
-		return ans;
-	}
-	inline t_vector<T, N> add(const t_vector<T, N> &rhs) const {
-		t_vector<T, N> ans;
-		__DEF_TRANSFORM_2(ans, (*this), rhs, +);
-		return ans;
-	}
+	//Vector operations:
+	inline t_vector sub(const t_vector &rhs) const { t_vector ans; __DEF_TRANSFORM_2(ans, (*this), rhs, -); return ans; }
+	inline t_vector add(const t_vector &rhs) const { t_vector ans; __DEF_TRANSFORM_2(ans, (*this), rhs, +); return ans; }
 
 	//Mixed operations:
-	inline t_vector<T, N> div(const T &val) const {
-		t_vector<T, N> ans;
-		__DEF_TRANSFORM_1(ans, (*this), val, /);
-		return ans;
-	}
-	inline t_vector<T, N> mul(const T &val) const {
-		t_vector<T, N> ans;
-		__DEF_TRANSFORM_1(ans, (*this), val, *);
-		return ans;
-	}
-	inline t_vector<T, N> sub(const T &val) const {
-		t_vector<T, N> ans;
-		__DEF_TRANSFORM_1(ans, (*this), val, -);
-		return ans;
-	}
-	inline t_vector<T, N> add(const T &val) const {
-		t_vector<T, N> ans;
-		__DEF_TRANSFORM_1(ans, (*this), val, +);
-		return ans;
-	}
-	inline t_vector<T, N> neg() const {
-		t_vector<T, N> ans;
-		__DEF_TRANSFORM_1(ans, (*this), -1, *);
-		return ans;
-	}
+	inline t_vector div(const T &val) const { t_vector ans; __DEF_TRANSFORM_1(ans, (*this), val, /); return ans; }
+	inline t_vector mul(const T &val) const { t_vector ans; __DEF_TRANSFORM_1(ans, (*this), val, *); return ans; }
+	inline t_vector sub(const T &val) const { t_vector ans; __DEF_TRANSFORM_1(ans, (*this), val, -); return ans; }
+	inline t_vector add(const T &val) const { t_vector ans; __DEF_TRANSFORM_1(ans, (*this), val, +); return ans; }
+	inline t_vector neg() const { t_vector ans; __DEF_TRANSFORM_1(ans, (*this), -1, *); return ans; }
 
-	inline const T dot(const t_vector &rhs) const {
-		return std::inner_product(
-		dat, dat + N, rhs.dat, T(0)
-		);
-	}
-	inline const T len() const {
-		return std::sqrt(len2());
-	}
-	inline const T len2() const {
-		return dot(*this);
-	}
-
-	//Assignment:
-	inline t_vector<T, N> &operator+=(const t_vector<T, N> &rhs) {
-		*this = this->add(rhs);
-		return *this;
-	}
-	inline t_vector<T, N> &operator-=(const t_vector<T, N> &rhs) {
-		*this = this->sub(rhs);
-		return *this;
-	}
-	inline t_vector<T, N> &operator*=(const T &val) {
-		*this = this->mul(val);
-		return *this;
-	}
-	inline t_vector<T, N> &operator/=(const T &val) {
-		*this = this->div(val);
-		return *this;
-	}
+	inline const T dot(const t_vector &rhs) const { return std::inner_product(dat.begin(), dat.end(), rhs.dat.begin(), T(0)); }
+	inline const T len()  const { return std::sqrt(len2()); }
+	inline const T len2() const { return dot(*this); }
 
 	//Comparison:
-	inline bool operator != (const t_vector &rhs) const {
-		return !std::equal(dat, dat + N, rhs.dat);
-	}
-	inline bool operator == (const t_vector &rhs) const {
-		return std::equal(dat, dat + N, rhs.dat);
-	}
+	inline bool operator!=(const t_vector &rhs) const { return !std::equal(dat.begin(), dat.end(), rhs.dat.begin()); }
+	inline bool operator==(const t_vector &rhs) const { return std::equal(dat.begin(), dat.end(), rhs.dat.begin()); }
+
+	//Assignment:
+	inline t_vector &operator+=(const t_vector &rhs) { *this = this->add(rhs); return *this; }
+	inline t_vector &operator-=(const t_vector &rhs) { *this = this->sub(rhs); return *this; }
+	inline t_vector &operator*=(const T &val) { *this = this->mul(val); return *this; }
+	inline t_vector &operator/=(const T &val) { *this = this->div(val); return *this; }
 
 	//Data access:
-	inline const T &operator[] (int i) const {
-		return dat[i];
-	}
-	inline T &operator[] (int i) {
-		return dat[i];
-	}
-	constexpr unsigned size() const {
-		return N;
-	}
-	inline const T *data() const {
-		return dat;
-	}
-	inline T *data() {
-		return dat;
-	}
+	inline const T &operator[] (int i) const { return dat[i]; }
+	inline T &operator[] (int i) { return dat[i]; }
+
+	const auto begin() const { return dat.begin(); }
+	const auto end() const { return dat.end(); }
+	auto begin() { return dat.begin(); }
+	auto end() { return dat.end(); }
 
 private:
-	T dat[N];
+	std::array<T, N> dat;
+};
+
+//Matrix of linear transformation:
+template <typename T, unsigned N>
+struct t_matrix {
+
+	typedef BASE::t_vector<T, N> t_vector;
+
+	__CHECK_TEMPLATE_POINT_TYPE(T)
+	__CHECK_TEMPLATE_POINT_DIM(N)
+
+	template <typename... TT, typename = typename std::enable_if<(sizeof...(TT) > 1)>::type>
+	inline t_matrix(TT... arg): dat{static_cast<T> (arg) ...} {
+		__CHECK_PARAMETER_PACK_SIZE(arg, N * N)
+	}
+	inline t_matrix(const T &val) { std::fill(dat.begin(), dat.end(), val); }
+	inline t_matrix() {}
+
+	template <typename ... TT,
+	          typename = typename std::enable_if<(sizeof ... (TT) == 0) && (N == 1)>::type>
+	inline operator T() const {
+		return dat[0];
+	}
+
+	//Get rotation matrix:
+	inline static t_matrix getRotation(int i, int j, const T &angle);
+	//Get identity matrix:
+	inline static t_matrix getIdentity();
+	//Inverse matrix:
+	inline t_matrix<T, N> inv() const;
+	//Determinant:
+	inline const T det() const;
+
+	//Matrix operations:
+	inline t_matrix mul(const t_matrix &rhs) const;
+	inline t_vector mul(const t_vector &rhs) const;
+	inline t_matrix sub(const t_matrix &rhs) const { t_matrix ans; __DEF_TRANSFORM_2(ans, (*this), rhs, -); return ans; }
+	inline t_matrix add(const t_matrix &rhs) const { t_matrix ans; __DEF_TRANSFORM_2(ans, (*this), rhs, +); return ans; }
+
+	//Mixed operations:
+	inline t_matrix div(const T &val) const { t_matrix ans; __DEF_TRANSFORM_1(ans, (*this), val, /); return ans; }
+	inline t_matrix mul(const T &val) const { t_matrix ans; __DEF_TRANSFORM_1(ans, (*this), val, *); return ans; }
+	inline t_matrix sub(const T &val) const { t_matrix ans; __DEF_TRANSFORM_1(ans, (*this), val, -); return ans; }
+	inline t_matrix add(const T &val) const { t_matrix ans; __DEF_TRANSFORM_1(ans, (*this), val, +); return ans; }
+	inline t_matrix neg() const { t_matrix ans; __DEF_TRANSFORM_1(ans, (*this), -1, *); return ans; }
+
+	//Comparison:
+	inline bool operator != (const t_matrix &rhs) const { return !std::equal(dat.begin(), dat.end(), rhs.dat.begin()); }
+	inline bool operator == (const t_matrix &rhs) const { return std::equal(dat.begin(), dat.end(), rhs.dat.begin()); }
+
+	//Assignment:
+	inline t_matrix &operator+=(const t_matrix &rhs) { *this = this->add(rhs); return *this; }
+	inline t_matrix &operator-=(const t_matrix &rhs) { *this = this->sub(rhs); return *this; }
+	inline t_matrix &operator*=(const T &val) { *this = this->mul(val); return *this; }
+	inline t_matrix &operator/=(const T &val) { *this = this->div(val); return *this; }
+
+	//Data access:
+	inline const t_vector &operator[] (int i) const { return dat[i]; }
+	inline t_vector &operator[] (int i) { return dat[i]; }
+
+	const auto begin() const { return dat.begin(); }
+	const auto end() const { return dat.end(); }
+	auto begin() { return dat.begin(); }
+	auto end() { return dat.end(); }
+
+private:
+	std::array<t_vector, N> dat;
 };
 
 //Orthonormal basis of Affine space:
@@ -386,10 +238,10 @@ struct t_basis {
 
 	//Construct uniform basis:
 	inline t_basis(const t_vector &_top): top(_top) {
-		std::fill(vec, vec + M, T(0)); for (int i = 0; i < M; ++ i) vec[i][i] = T(1);
+		std::fill(vec.begin(), vec.end(), T(0)); for (int i = 0; i < M; ++ i) vec[i][i] = T(1);
 	}
 	inline t_basis(): top(0) {
-		std::fill(vec, vec + M, T(0)); for (int i = 0; i < M; ++ i) vec[i][i] = T(1);
+		std::fill(vec.begin(), vec.end(), T(0)); for (int i = 0; i < M; ++ i) vec[i][i] = T(1);
 	}
 
 	//Basis transform:
@@ -402,7 +254,7 @@ struct t_basis {
 	}
 	template <typename ... TT> inline t_basis mov(TT ... arg) const {
 		t_basis ans;
-		std::copy(vec, vec + M, ans.vec);
+		std::copy(vec.begin(), vec.end(), ans.vec.begin());
 		ans.top = top.mov(arg ...);
 		return ans;
 	}
@@ -442,10 +294,8 @@ struct t_basis {
 	const t_vector &operator[](int i) const { return vec[i]; }
 	const t_vector &center() const { return top; }
 
-	const auto *begin() const { return vec; }
-	const auto *end() const {
-		return vec + M;
-	}
+	const auto begin() const { return vec.begin(); }
+	const auto end() const { return vec.end(); }
 
 private:
 	template <typename _T, unsigned _N, unsigned _M> friend struct t_basis;
@@ -476,7 +326,7 @@ private:
 		return true;
 	}
 
-	t_vector vec[M];
+	std::array<t_vector, M> vec;
 	t_vector top;
 };
 
@@ -537,8 +387,8 @@ __DEF_UNARY(t_vector, neg, -)
 
 template <typename T, unsigned N>
 std::ostream &operator<<(std::ostream &out, const t_matrix<T, N> &mat) {
-	out << mat.row(0);
-	for (int i = 1; i < N; ++ i) out << "\n" << mat.row(i);
+	out << mat[0];
+	for (int i = 1; i < N; ++ i) out << "\n" << mat[i];
 	return out;
 }
 
