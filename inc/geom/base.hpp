@@ -71,8 +71,7 @@ struct t_basis;
 #define MATH_EPSILON (1.e-14)
 
 //N-dimensional vector:
-template <typename T, unsigned N>
-struct t_vector {
+template <typename T, unsigned N> struct t_vector {
 
 	__CHECK_TEMPLATE_POINT_TYPE(T)
 	__CHECK_TEMPLATE_POINT_DIM(N)
@@ -153,8 +152,7 @@ private:
 };
 
 //Matrix of linear transformation:
-template <typename T, unsigned N>
-struct t_matrix {
+template <typename T, unsigned N> struct t_matrix {
 
 	typedef BASE::t_vector<T, N> t_vector;
 
@@ -184,8 +182,16 @@ struct t_matrix {
 	inline const T det() const;
 
 	//Matrix operations:
-	inline t_matrix mul(const t_matrix &rhs) const;
-	inline t_vector mul(const t_vector &rhs) const;
+	inline t_matrix mul(const t_matrix &rhs) const {
+		t_matrix ans(0);
+		for (int i = 0; i < N; ++ i) for (int j = 0; j < N; ++ j) for (int k = 0; k < N; ++ k) ans[i][j] += dat[i][k] * rhs.dat[k][j];
+		return ans;
+	}
+	inline t_vector mul(const t_vector &rhs) const {
+		t_vector ans(0);
+		for (int i = 0; i < N; ++ i) for (int k = 0; k < N; ++ k) ans[i] += dat[i][k] * rhs[k];
+		return ans;
+	}
 	inline t_matrix sub(const t_matrix &rhs) const { t_matrix ans; __DEF_TRANSFORM_2(ans, (*this), rhs, -); return ans; }
 	inline t_matrix add(const t_matrix &rhs) const { t_matrix ans; __DEF_TRANSFORM_2(ans, (*this), rhs, +); return ans; }
 
@@ -231,25 +237,24 @@ struct t_basis {
 
 	static_assert(N >= M, "Subspace dimension must not be more owner dimension!");
 
-	template <typename... TT, typename = typename std::enable_if<(sizeof...(TT) == M)>::type>
-	inline t_basis(const t_vector &_top, TT && ... arg): top(_top), vec{t_vector{arg} ...} {
+	template <typename ... TT,
+	          typename = typename std::enable_if<(sizeof...(TT) == M)>::type>
+	inline t_basis(const t_vector &_top, TT && ... arg):
+	               top(_top), vec{t_vector{arg} ...} {
 		this->template ort<false>(0);
 	}
-
 	//Construct uniform basis:
 	inline t_basis(const t_vector &_top): top(_top) {
-		std::fill(vec.begin(), vec.end(), T(0)); for (int i = 0; i < M; ++ i) vec[i][i] = T(1);
+		std::fill(vec.begin(), vec.end(), 0); for (int i = 0; i < M; ++ i) vec[i][i] = T(1);
 	}
 	inline t_basis(): top(0) {
-		std::fill(vec.begin(), vec.end(), T(0)); for (int i = 0; i < M; ++ i) vec[i][i] = T(1);
+		std::fill(vec.begin(), vec.end(), 0); for (int i = 0; i < M; ++ i) vec[i][i] = T(1);
 	}
 
 	//Basis transform:
 	template <typename ... TT> inline t_basis rot(TT ... arg) const {
 		t_basis ans; ans.top = top.rot(arg ...);
-		for (int i = 0; i < M; ++ i) {
-			ans.vec[i] = top.add(vec[i]).rot(arg ...).sub(ans.top);
-		}
+		for (int i = 0; i < M; ++ i) ans.vec[i] = top.add(vec[i]).rot(arg ...).sub(ans.top);
 		return ans;
 	}
 	template <typename ... TT> inline t_basis mov(TT ... arg) const {
@@ -260,12 +265,12 @@ struct t_basis {
 	}
 
 	//Orthogonal complement:
-	template <unsigned K, typename = typename std::enable_if<(K <= N) && (K > M)>::type>
+	template <unsigned K,
+	          typename = typename std::enable_if<(K <= N) && (K > M)>::type>
 	t_basis<T, N, K> ext() const {
-
-		t_basis<T, N, K> basis; for (int i = 0; i < M; ++ i) basis.vec[i] = vec[i];
+		t_basis<T, N, K> basis;
+		for (int i = 0; i < M; ++ i) { basis.vec[i] = vec[i]; }
 		basis.top = top;
-
 		for (int k = M, i = 0; (k < N + K) && (i < N); ++ i) {
 			basis.vec[k] = 0; basis.vec[k][i] = T(1);
 			if (basis.template ort<true>(k - 1)) {
@@ -291,11 +296,18 @@ struct t_basis {
 		return ans;
 	}
 
-	const t_vector &operator[](int i) const { return vec[i]; }
-	const t_vector &center() const { return top; }
-
-	const auto begin() const { return vec.begin(); }
-	const auto end() const { return vec.end(); }
+	const t_vector &operator[](int i) const {
+		return vec[i];
+	}
+	const t_vector &center() const {
+		return top;
+	}
+	const auto begin() const {
+		return vec.begin();
+	}
+	const auto end() const {
+		return vec.end();
+	}
 
 private:
 	template <typename _T, unsigned _N, unsigned _M> friend struct t_basis;
