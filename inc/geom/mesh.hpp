@@ -441,13 +441,14 @@ template <typename T, unsigned N, unsigned M = N> struct t_mesh {
 	t_part<1> edge(int i) const { return cell<1>(i); }
 	t_part<0> vert(int i) const { return cell<0>(i); }
 
+	const MESH::t_grid<M> &grid() const { return DATA.GRID->GRID; }
+
 	t_iter<M> begin() const {
 		return t_iter<M>(*this, DATA.GRID->ITEM.data(), 0);
 	}
 	t_iter<M> end() const {
 		return t_iter<M>(*this, DATA.GRID->ITEM.data(),
-		DATA.GRID->ITEM.size(), false
-		);
+		DATA.GRID->ITEM.size(), false);
 	}
 
 private:
