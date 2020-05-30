@@ -75,6 +75,13 @@ struct t_hand {
 		return grid;
 	}
 
+	template <unsigned K, typename = typename std::enable_if<(K > N)>::type>
+	static t_grid<N> make(const t_grid<K> &other) {
+		t_grid<N> grid = std::move(t_hand<N, M + 1>::make(other));
+		fill(grid, t_hand<K, M>::cell(other));
+		t_hand<N, M>::cell(grid) = t_hand<K, M>::cell(other);
+		return grid;
+	}
 	static t_grid<N> make(const t_grid<N> &grid) {
 		return grid;
 	}
@@ -134,6 +141,12 @@ struct t_hand<N, N> {
 	static t_grid<N> make(std::vector<t_cell<N>> &&cell) {
 		t_grid<N> grid; fill(grid, cell);
 		grid.CELL = std::move(cell);
+		return grid;
+	}
+	template <unsigned K, typename = typename std::enable_if<(K > N)>::type>
+	static t_grid<N> make(const t_grid<K> &other) {
+		t_grid<N> grid; fill(grid, t_hand<K, N>::cell(other));
+		grid.CELL = t_hand<K, N>::cell(other);
 		return grid;
 	}
 	static t_grid<N> make(const t_grid<N> &grid) {
