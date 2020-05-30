@@ -75,6 +75,13 @@ struct t_hand {
 		return grid;
 	}
 
+	static t_grid<N> make(const t_grid<N> &grid) {
+		return grid;
+	}
+	static t_grid<N> &&make(t_grid<N> &&grid) {
+		return std::move(grid);
+	}
+
 	static void fill(t_grid<N> &grid, const std::vector<t_cell<M>> &cell) {
 		auto &link = grid.template link<M - 1>();
 		for (int c = 0; c < cell.size(); ++ c)
@@ -128,6 +135,12 @@ struct t_hand<N, N> {
 		t_grid<N> grid; fill(grid, cell);
 		grid.CELL = std::move(cell);
 		return grid;
+	}
+	static t_grid<N> make(const t_grid<N> &grid) {
+		return grid;
+	}
+	static t_grid<N> &&make(t_grid<N> &&grid) {
+		return std::move(grid);
 	}
 
 	static void fill(t_grid<N> &grid, const std::vector<t_cell<N>> &cell) {
@@ -364,12 +377,7 @@ template <typename T, unsigned N, unsigned M = N> struct t_mesh {
 		DATA.GRID = std::make_shared<t_grid>();
 		DATA.GRID->GRID = t_hand<M, 1>::make(
 			std::forward<TT>(args) ... );
-		DATA.GRID->ITEM.resize(
-		DATA.GRID->GRID.template cell<M>().size());
-		std::iota(
-		DATA.GRID->ITEM.begin(),
-		DATA.GRID->ITEM.end(), 0
-		);
+		init();
 	}
 
 	template <typename ... TT> t_mesh(std::vector<t_vert> &&vert, TT && ... args) {
@@ -378,12 +386,7 @@ template <typename T, unsigned N, unsigned M = N> struct t_mesh {
 		DATA.GRID = std::make_shared<t_grid>();
 		DATA.GRID->GRID = t_hand<M, 1>::make(
 			std::forward<TT>(args) ... );
-		DATA.GRID->ITEM.resize(
-		DATA.GRID->GRID.template cell<M>().size());
-		std::iota(
-		DATA.GRID->ITEM.begin(),
-		DATA.GRID->ITEM.end(), 0
-		);
+		init();
 	}
 
 	t_mesh() {}
@@ -447,6 +450,15 @@ private:
 		std::shared_ptr<std::vector<t_vert>> VERT;
 		std::shared_ptr<t_grid> GRID;
 	};
+
+	void init() {
+		DATA.GRID->ITEM.resize(
+		DATA.GRID->GRID.template cell<M>().size());
+		std::iota(
+		DATA.GRID->ITEM.begin(),
+		DATA.GRID->ITEM.end(),
+		0);
+	}
 
 	t_data DATA;
 };
