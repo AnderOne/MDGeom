@@ -21,8 +21,8 @@
 #pragma once
 #include "base.hpp"
 #include <memory>
-#include <vector>
 #include <array>
+#include <vector>
 #include <map>
 
 namespace GEOM {
@@ -33,7 +33,11 @@ namespace MESH {
 
 template <typename T, unsigned N> using t_vert = t_vector<T, N>;
 
-template <unsigned N> using t_cell = std::array<int, N + 1>;
+//NOTE: Obtaining simplicial cells after such operations as slicing and etc. is very difficult for N-d case!
+template <unsigned N> struct t_item { typedef std::vector<int> t_type; };
+template <> struct t_item<1> { typedef std::array<int, 2> t_type; };
+
+template <unsigned N> using t_cell = typename t_item<N>::t_type;
 
 typedef t_cell<3> t_body;
 typedef t_cell<2> t_face;
