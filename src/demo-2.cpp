@@ -15,8 +15,8 @@ int main() {
 
 	//Generate 3d-mesh by its elements:
 	std::vector<t_mesh_3d::t_vert> VERT{
-		{0., 0., 0.}, {0., 0., 1.}, {0., 1., 0.}, {0., 1., 1.},
-		{1., 0., 0.}, {1., 0., 1.}, {1., 1., 0.}, {1., 1., 1.}
+		{-1, -1, -1}, {-1, -1, +1}, {-1, +1, -1}, {-1, +1, +1},
+		{+1, -1, -1}, {+1, -1, +1}, {+1, +1, -1}, {+1, +1, +1}
 	};
 	std::vector<t_edge> EDGE{
 		{0, 1}, {0, 2}, {0, 4}, {1, 3}, {1, 5}, {2, 3},
@@ -39,7 +39,12 @@ int main() {
 		{1, 7, 14, 17}, {4, 10, 12, 17},
 		{3, 9, 12, 15}, {5, 11, 13, 15}
 	};
-	t_mesh_3d mesh(std::move(VERT), std::move(EDGE), std::move(FACE), std::move(BODY));
+	t_mesh_3d mesh(
+		std::move(VERT),
+		std::move(EDGE),
+		std::move(FACE),
+		std::move(BODY)
+	);
 
 	//Iteration over mesh elements:
 	std::cout << std::scientific << std::setprecision(5);
