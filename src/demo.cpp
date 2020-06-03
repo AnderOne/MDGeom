@@ -8,6 +8,7 @@
 #include <map>
 
 using namespace GEOM::MESH;
+using namespace GEOM::FILE;
 using namespace GEOM;
 
 int main() {
@@ -78,30 +79,8 @@ int main() {
 
 	//Output mesh into file:
 	std::ofstream fout("test.txt");
-	fout << "1\n" << mesh.vert().size();
-	fout << "\n";
-	for (auto vert: mesh.vert()) {
-		fout << vert;
-		fout << "\n";
-	}
-	fout << "\n" << mesh.edge().size();
-	fout << "\n";
-	for (auto edge: mesh.edge()) {
-		fout << edge[0];
-		fout << "\t";
-		fout << edge[1];
-		fout << "\n";
-	}
-	fout << "\n" << mesh.face().size();
-	fout << "\n";
-	for (auto face: mesh.face()) {
-		fout << face[0];
-		fout << "\t";
-		fout << face[1];
-		fout << "\t";
-		fout << face[2];
-		fout << "\n";
-	}
+	fout << "1\n";
+	fout << mesh;
 
 	return 0;
 }
