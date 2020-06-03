@@ -35,7 +35,7 @@ constexpr int nullind = -1;
 
 //Метод проецирования сетки на подпространство:
 template <typename T, unsigned N, unsigned M>
-auto project(const t_mesh<T, N, M> &_mesh, const t_basis<T, N, N - 1> &_basis) {
+auto getProject(const t_mesh<T, N, M> &_mesh, const t_basis<T, N, N - 1> &_basis) {
 
 	typedef t_mesh<T, N - 1, t_reduce<N, M>::dim> t_projected_mesh;
 	typedef typename t_projected_mesh::t_vert t_projected_vert;
@@ -136,7 +136,7 @@ struct t_sect<N, M, N> {
 
 //Метод сечения подпространством:
 template <typename T, unsigned N, unsigned M>
-auto slice(const t_mesh<T, N, M> &_mesh, const t_basis<T, N, N - 1> &_basis) {
+auto getSlice(const t_mesh<T, N, M> &_mesh, const t_basis<T, N, N - 1> &_basis) {
 
 	typedef t_mesh<T, N - 1, t_reduce<N, M>::dim> t_sliced_mesh;
 	typedef typename t_sliced_mesh::t_vert t_sliced_vert;
