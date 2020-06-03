@@ -33,10 +33,12 @@ namespace FILE {
 template <typename T, unsigned N, unsigned M>
 std::ostream &operator << (std::ostream &out, const t_mesh<T, N, M> &mesh) {
 
-	out << mesh.vert().size() << "\n";
-	for (auto v: mesh.vert()) {
-		out << v << "\n";
-	}
+	out << N << "\t" << M << "\n";
+	out << "\n";
+
+	out << mesh.vert().size();
+	out << "\n";
+	for (auto v: mesh.vert()) out << v << "\n";
 	out << "\n";
 
 	out << mesh.grid();

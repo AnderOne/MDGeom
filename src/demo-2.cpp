@@ -84,7 +84,7 @@ int main() {
 
 	//Output mesh into file:
 	std::ofstream fout("test.txt");
-	fout << "1\n";
+	fout << "1\n\n";
 	fout << mesh;
 
 	return 0;

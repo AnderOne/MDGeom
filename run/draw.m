@@ -15,13 +15,27 @@ function draw(fname, xmin, xmax, ymin, ymax, zmin, zmax, tmin, tmax, gif)
 	for t = 1 : tnum
 
 		%Считываем сетку из файла:
-		vnum = fscanf(finp, '%i', 1); vert = fscanf(finp, '%f', [3, vnum]).';
+		mdim = fscanf(finp, '%i', 2); if (mdim(1) > 3); error('Can''t draw multi-mdimensional data!'); end
+
+		vnum = fscanf(finp, '%i', 1); vert = fscanf(finp, '%f', [mdim(1), vnum]).';
+		if (mdim(1) < 3)
+			vert(:, 3) = 0;
+		end
+		if (mdim(1) < 2)
+			vert(:, 2) = 0;
+		end
+
 		enum = fscanf(finp, '%i', 1); edge = fscanf(finp, '%i', [2, enum]).';
 		edge = edge + 1;
-		fnum = fscanf(finp, '%i', 1);
-		for i = 1 : fnum
-			face{i} = fscanf(finp, '%i', fscanf(finp, '%i', 1)).';
-			face{i} = face{i} + 1;
+		
+		if (mdim(2) > 1)
+			fnum = fscanf(finp, '%i', 1);
+			for i = 1 : fnum
+				face{i} = fscanf(finp, '%i', fscanf(finp, '%i', 1)).';
+				face{i} = face{i} + 1;
+			end
+		else
+			fnum = 0;
 		end
 
 		if (t < tmin) || (t > tmax); continue; end
