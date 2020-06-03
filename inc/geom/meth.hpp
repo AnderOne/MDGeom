@@ -31,6 +31,8 @@ namespace METH {
 
 template <unsigned N, unsigned M> struct t_reduce { constexpr static int dim = ((M == N)? (N - 1): (M)); };
 
+constexpr int nullind = -1;
+
 //Метод проецирования сетки на подпространство:
 template <typename T, unsigned N, unsigned M>
 auto project(const t_mesh<T, N, M> &_mesh, const t_basis<T, N, N - 1> &_basis) {
@@ -62,7 +64,7 @@ template <unsigned N, unsigned M, unsigned K> struct t_sect {
 
 		for (int i = 0; i < old_cell.size(); ++ i) {
 			t_cell<K + 1> cell;
-			for (int c: old_cell[i]) { int k = old_item_index[c]; if (k >= 0) cell.push_back(k); }
+			for (int c: old_cell[i]) { int k = old_item_index[c]; if (k != nullind) cell.push_back(k); }
 			//Add new cell:
 			if (cell.size() == old_cell[i].size()) {
 				old_cell_index[i] = new_cell.size();
@@ -78,7 +80,7 @@ template <unsigned N, unsigned M, unsigned K> struct t_sect {
 
 		for (int i = 0; i < old_cell.size(); ++ i) {
 			t_push<K> push;
-			for (int c: old_cell[i]) { int k = new_item_child[c]; if (k >= 0) push.add(k); }
+			for (int c: old_cell[i]) { int k = new_item_child[c]; if (k != nullind) push.add(k); }
 			//Add new item:
 			if (push.pos > 0) {
 				new_cell_child[i] = new_item.size();
@@ -94,8 +96,8 @@ template <unsigned N, unsigned M, unsigned K> struct t_sect {
 		const auto &old_cell = old_grid.template cell<K + 1>();
 		auto &new_item = new_grid.template cell<K>();
 
-		std::vector<int> old_cell_index(old_cell.size(), -1);
-		std::vector<int> new_cell_child(old_cell.size(), -1);
+		std::vector<int> old_cell_index(old_cell.size(), nullind);
+		std::vector<int> new_cell_child(old_cell.size(), nullind);
 
 		//Заполняем ячейки, целиком лежащие в подпространстве:
 		t_sect<N, M, (K < M)? (K): (N)>(old_grid, new_grid).make_new_cell(
@@ -148,7 +150,7 @@ auto slice(const t_mesh<T, N, M> &_mesh, const t_basis<T, N, N - 1> &_basis) {
 	const auto &old_vert = _mesh.vert();
 	std::vector<t_sliced_vert> new_vert;
 
-	std::vector<int> old_vert_index(old_vert.size(), -1);
+	std::vector<int> old_vert_index(old_vert.size(), nullind);
 	std::vector<int> old_vert_state(old_vert.size());
 	for (int i = 0; i < old_vert.size(); ++ i) {
 		T p = (old_vert[i] - center) * normal;
@@ -169,8 +171,8 @@ auto slice(const t_mesh<T, N, M> &_mesh, const t_basis<T, N, N - 1> &_basis) {
 	const auto &old_edge = old_grid.template cell<1>();
 	auto &new_edge = new_grid.template cell<1>();
 
-	std::vector<int> old_edge_index(old_edge.size(), -1);
-	std::vector<int> new_edge_child(old_edge.size(), -1);
+	std::vector<int> old_edge_index(old_edge.size(), nullind);
+	std::vector<int> new_edge_child(old_edge.size(), nullind);
 
 	for (int i = 0; i < old_edge.size(); ++ i) {
 		const auto &edge = old_edge[i];
