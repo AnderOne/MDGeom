@@ -15,7 +15,7 @@ function draw(fname, xmin, xmax, ymin, ymax, zmin, zmax, tmin, tmax, gif)
 	for t = 1 : tnum
 
 		%Считываем сетку из файла:
-		mdim = fscanf(finp, '%i', 2); if (mdim(1) > 3); error('Can''t draw multi-mdimensional data!'); end
+		mdim = fscanf(finp, '%i', 2); if (mdim(1) > 3); error('Can''t draw multi-dimensional data!'); end
 
 		vnum = fscanf(finp, '%i', 1); vert = fscanf(finp, '%f', [mdim(1), vnum]).';
 		if (mdim(1) < 3)
@@ -62,7 +62,7 @@ if (false)
 			x = mean(p(:, 1));
 			y = mean(p(:, 2));
 			z = mean(p(:, 3));
-			text(x, y, z, s, 'Color', 'k', 'FontSize', 16)
+			text(x, y, z, s, 'Color', 'b', 'FontSize', 16)
 			hold on
 		end
 		%Нумерация ребер:
@@ -71,7 +71,16 @@ if (false)
 			x = mean(p(:, 1));
 			y = mean(p(:, 2));
 			z = mean(p(:, 3));
-			text(x, y, z, s, 'Color', 'm', 'FontSize', 12)
+			text(x, y, z, s, 'Color', 'r', 'FontSize', 14)
+			hold on
+		end
+		%Нумерация вершин:
+		for i = 1 : vnum
+			s = num2str(i - 1);
+			x = vert(i, 1);
+			y = vert(i, 2);
+			z = vert(i, 3);
+			text(x, y, z, s, 'Color', 'g', 'FontSize', 14)
 			hold on
 		end
 end
