@@ -4,6 +4,10 @@ set(CMAKE_CXX_STANDARD 14)
 
 project(MDGeom)
 
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
 add_executable(demo-1 ./src/demo-1.cpp)
 add_executable(demo-2 ./src/demo-2.cpp)
 add_executable(demo-3 ./src/demo-3.cpp)
