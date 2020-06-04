@@ -187,7 +187,7 @@ auto getSlice(const t_mesh<T, N, M> &_mesh, const t_basis<T, N, N - 1> &_basis) 
 			});
 		}
 		else
-		if (old_vert_state[a] * old_vert_state[b] <= 0) {
+		if (old_vert_state[a] * old_vert_state[b] < 0) {
 			const auto &pa = old_vert[a];
 			const auto &pb = old_vert[b];
 			T p = - ((pa - center) * normal) /
