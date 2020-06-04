@@ -17,6 +17,7 @@ function draw(fname, xmin, xmax, ymin, ymax, zmin, zmax, tmin, tmax, gif)
 		%Считываем сетку из файла:
 		mdim = fscanf(finp, '%i', 2); if (mdim(1) > 3); error('Can''t draw multi-dimensional data!'); end
 
+		%Считываем вершины:
 		vnum = fscanf(finp, '%i', 1); vert = fscanf(finp, '%f', [mdim(1), vnum]).';
 		if (mdim(1) < 3)
 			vert(:, 3) = 0;
@@ -25,17 +26,26 @@ function draw(fname, xmin, xmax, ymin, ymax, zmin, zmax, tmin, tmax, gif)
 			vert(:, 2) = 0;
 		end
 
-		enum = fscanf(finp, '%i', 1); edge = fscanf(finp, '%i', [2, enum]).';
-		edge = edge + 1;
-		
+		%Считываем ребра:
+		enum = fscanf(finp, '%i', 1); edge = fscanf(finp, '%i', [2, enum]).' + 1;
+
+		%Считываем грани:
 		if (mdim(2) > 1)
 			fnum = fscanf(finp, '%i', 1);
 			for i = 1 : fnum
-				face{i} = fscanf(finp, '%i', fscanf(finp, '%i', 1)).';
-				face{i} = face{i} + 1;
+				face{i} = fscanf(finp, '%i', fscanf(finp, '%i', 1)).' + 1;
 			end
 		else
 			fnum = 0;
+		end
+		%Считываем тела:
+		if (mdim(2) > 2)
+			bnum = fscanf(finp, '%i', 1);
+			for i = 1 : bnum
+				body{i} = fscanf(finp, '%i', fscanf(finp, '%i', 1)).' + 1;
+			end
+		else
+			bnum = 0;
 		end
 
 		if (t < tmin) || (t > tmax); continue; end
