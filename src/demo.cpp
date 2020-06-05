@@ -301,10 +301,10 @@ void testForRectMesh4D(std::ostream &fout, t_test_type type) {
 
 		switch (type) {
 		case PROJECT:
-			fout << getProject(mesh, t_space_4d()) << "\n\n";
+			fout << getProject(mesh, t_space<4, 3>()) << "\n\n";
 			break;
 		case SLICING:
-			fout << getSlice(mesh, t_space_4d()) << "\n\n";
+			fout << getSlice(mesh, t_space<4, 3>()) << "\n\n";
 			break;
 		}
 

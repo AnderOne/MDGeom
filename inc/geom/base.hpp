@@ -426,37 +426,26 @@ std::ostream &operator<<(std::ostream &out, const t_vector<T, N> &vec) {
 
 //...
 
-typedef BASE::t_matrix<double, 4> t_matrix_4d;
-typedef BASE::t_matrix<double, 3> t_matrix_3d;
-typedef BASE::t_matrix<double, 2> t_matrix_2d;
+typedef t_matrix<double, 4> t_matrix_4d;
+typedef t_matrix<double, 3> t_matrix_3d;
+typedef t_matrix<double, 2> t_matrix_2d;
 
-typedef BASE::t_vector<double, 4> t_vector_4d;
-typedef BASE::t_vector<double, 3> t_vector_3d;
-typedef BASE::t_vector<double, 2> t_vector_2d;
+typedef t_vector<double, 4> t_vector_4d;
+typedef t_vector<double, 3> t_vector_3d;
+typedef t_vector<double, 2> t_vector_2d;
 
-template <unsigned N>
-using t_space = t_basis<double, N, 3>;
+template <unsigned N, unsigned M = N> using t_space = t_basis<double, N, M>;
 
-typedef t_space<4>
-t_space_4d;
+template <unsigned N> using t_plane = t_basis<double, N, N - 1>;
 
-template <unsigned N>
-using t_plane = t_basis<double, N, 2>;
+typedef t_plane<4> t_plane_4d;
+typedef t_plane<3> t_plane_3d;
 
-typedef t_plane<4>
-t_plane_4d;
-typedef t_plane<3>
-t_plane_3d;
+template <unsigned N> using t_line = t_basis<double, N, 1>;
 
-template <unsigned N>
-using t_line = t_basis<double, N, 1>;
-
-typedef t_line<4>
-t_line_4d;
-typedef t_line<3>
-t_line_3d;
-typedef t_line<2>
-t_line_2d;
+typedef t_line<4> t_line_4d;
+typedef t_line<3> t_line_3d;
+typedef t_line<2> t_line_2d;
 
 //...
 

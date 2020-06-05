@@ -499,20 +499,20 @@ private:
 
 //...
 
+typedef t_mesh<double, 4>
+t_mesh_4d;
+typedef t_mesh<double, 3>
+t_mesh_3d;
+typedef t_mesh<double, 2>
+t_mesh_2d;
+
 template <unsigned N>
-using t_surf = MESH::t_mesh<double, N, N - 1>;
+using t_surf = t_mesh<double, N, N - 1>;
 
 typedef t_surf<4>
 t_surf_4d;
 typedef t_surf<3>
 t_surf_3d;
-
-typedef MESH::t_mesh<double, 4>
-t_mesh_4d;
-typedef MESH::t_mesh<double, 3>
-t_mesh_3d;
-typedef MESH::t_mesh<double, 2>
-t_mesh_2d;
 
 //...
 
