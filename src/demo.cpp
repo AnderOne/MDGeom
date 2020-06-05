@@ -22,12 +22,14 @@ enum t_test_type {
 	SLICING
 };
 
-t_surf_4d getRectSurf4D(t_cell_type type) {
+t_mesh_4d getRectMesh4D(t_cell_type type) {
 
-	std::vector<t_surf_4d::t_vert> VERT;
+	std::vector<t_mesh_4d::t_vert> VERT;
 	std::vector<t_edge> EDGE;
 	std::vector<t_face> FACE;
 	std::vector<t_body> BODY;
+	typedef MESH::t_cell<4> t_cell;
+	std::vector<t_cell> CELL;
 
 	switch (type) {
 
@@ -58,17 +60,21 @@ t_surf_4d getRectSurf4D(t_cell_type type) {
 			{8, 6, 7, 21, 16, 12}, {11, 9, 10, 22, 17, 12},
 			{15, 13, 14, 23, 17, 16}, {20, 18, 19, 23, 22, 21}
 		};
+		CELL = {
+			{0, 1, 2, 3, 4, 5, 6, 7}
+		};
 		break;
 
 	default:
 		assert(false);
 	}
 
-	return t_surf_4d(
+	return t_mesh_4d(
 	std::move(VERT),
 	std::move(EDGE),
 	std::move(FACE),
-	std::move(BODY)
+	std::move(BODY),
+	std::move(CELL)
 	);
 }
 
@@ -267,14 +273,6 @@ void print(const t_mesh<T, N, 2> &mesh, std::ostream &out) {
 }
 
 
-void testForRectMesh3D(std::ostream &fout, t_cell_type type) {
-
-	const t_mesh_3d mesh = getRectMesh3D(type);
-	print(mesh, std::cout);
-	fout << 1 << "\n\n";
-	fout << mesh;
-}
-
 void testForRectSurf3D(std::ostream &fout, t_cell_type type) {
 
 	const t_surf_3d mesh = getRectSurf3D(type);
@@ -283,9 +281,17 @@ void testForRectSurf3D(std::ostream &fout, t_cell_type type) {
 	fout << mesh;
 }
 
-void testForRectSurf4D(std::ostream &fout, t_test_type type) {
+void testForRectMesh3D(std::ostream &fout, t_cell_type type) {
 
-	t_surf_4d mesh = getRectSurf4D(POLYTOP);
+	const t_mesh_3d mesh = getRectMesh3D(type);
+	print(mesh, std::cout);
+	fout << 1 << "\n\n";
+	fout << mesh;
+}
+
+void testForRectMesh4D(std::ostream &fout, t_test_type type) {
+
+	t_mesh_4d mesh = getRectMesh4D(POLYTOP);
 
 	const int n = 100; fout << n << "\n\n";
 	for (int t = 0; t < n; ++ t) {
@@ -318,12 +324,12 @@ int main() {
 	std::ofstream fout("test.txt");
 	fout << std::setprecision(5);
 	fout << std::scientific;
-	//testForRectMesh3D(fout, SIMPLEX);
-	//testForRectMesh3D(fout, POLYTOP);
 	//testForRectSurf3D(fout, SIMPLEX);
 	//testForRectSurf3D(fout, POLYTOP);
-	//testForRectSurf4D(fout, PROJECT);
-	testForRectSurf4D(fout, SLICING);
+	//testForRectMesh3D(fout, SIMPLEX);
+	//testForRectMesh3D(fout, POLYTOP);
+	//testForRectMesh4D(fout, PROJECT);
+	testForRectMesh4D(fout, SLICING);
 
 	return 0;
 
