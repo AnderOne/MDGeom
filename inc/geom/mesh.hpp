@@ -425,25 +425,9 @@ template <typename T, unsigned N, unsigned M = N> struct t_mesh {
 	t_mesh() {}
 
 	//Data transform:
-	void rot(const t_vector<T, N> &center, int xaxis, int yaxis, T angle) {
-		if (!DATA.VERT.unique()) DATA.VERT = std::make_shared<std::vector<t_vert>>(*DATA.VERT);
-		for (auto &v : *DATA.VERT) v = v.rot(center, xaxis, yaxis, angle);
-	}
+	template <typename ... TT> void rot(TT ... args) { update(); for (auto &v : *DATA.VERT) v = v.rot(args ...); }
 
-	void rot(const t_basis<T, N> &basis, int xaxis, int yaxis, T angle) {
-		if (!DATA.VERT.unique()) DATA.VERT = std::make_shared<std::vector<t_vert>>(*DATA.VERT);
-		for (auto &v : *DATA.VERT) v = v.rot(basis, xaxis, yaxis, angle);
-	}
-
-	void rot(int xaxis, int yaxis, T angle) {
-		if (!DATA.VERT.unique()) DATA.VERT = std::make_shared<std::vector<t_vert>>(*DATA.VERT);
-		for (auto &v : *DATA.VERT) v = v.rot(xaxis, yaxis, angle);
-	}
-
-	void mov(const t_vector<T, N> &dir) {
-		if (!DATA.VERT.unique()) DATA.VERT = std::make_shared<std::vector<t_vert>>(*DATA.VERT);
-		for (auto &v : *DATA.VERT) v = v.mov(dir);
-	}
+	void mov(const t_vector<T, N> &dir) { update(); for (auto &v : *DATA.VERT) v = v.mov(dir); }
 
 	//Data access:
 	template <unsigned I> const std::vector<std::vector<int>> &link() const { return DATA.GRID->GRID.template link<I>(); }
@@ -484,6 +468,13 @@ private:
 		std::shared_ptr<std::vector<t_vert>> VERT;
 		std::shared_ptr<t_grid> GRID;
 	};
+
+	void update() {
+		if (!DATA.VERT.unique()) {
+		DATA.VERT = std::make_shared<std::vector<
+		t_vert>>(*DATA.VERT);
+		}
+	}
 
 	void init() {
 		DATA.GRID->ITEM.resize(
