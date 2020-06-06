@@ -425,8 +425,8 @@ template <typename T, unsigned N, unsigned M = N> struct t_mesh {
 	t_mesh() {}
 
 	//Data transform:
+	template <typename ... TT> void ref(TT ... args) { update(); for (auto &v : *DATA.VERT) v = v.ref(args ...); }
 	template <typename ... TT> void rot(TT ... args) { update(); for (auto &v : *DATA.VERT) v = v.rot(args ...); }
-
 	void mov(const t_vector<T, N> &dir) { update(); for (auto &v : *DATA.VERT) v = v.mov(dir); }
 
 	//Data access:

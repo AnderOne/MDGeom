@@ -90,6 +90,17 @@ template <typename T, unsigned N> struct t_vector {
 	}
 
 	//Vector transformations:
+
+	inline t_vector ref(const t_vector<T, N> &center, const t_vector<T, N> &normal) const {
+		return this->sub(normal.mul(this->sub(center).dot(normal) * 2));
+	}
+
+	inline t_vector ref(const t_basis<T, N, N - 1> &basis) const {
+		t_basis<T, N, N> extBasis = basis.template ext<N>();
+		const auto &normal = extBasis[N - 1];
+		return ref(basis.center(), normal);
+	}
+
 	inline t_vector rot(const t_vector<T, N> &center, int i, int j, T angle) const {
 		return this->sub(center).rot(i, j, angle).add(center);
 	}
