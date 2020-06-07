@@ -97,7 +97,7 @@ template <unsigned N, unsigned M, unsigned K, bool IS_SLICE = false> struct t_se
 			for (int c: old_cell[i]) {
 				int k = new_item_child[c]; if (k != nullind) push.add(k);
 			}
-			if (push.pos > 0) {
+			if (push.pos > K) {
 				new_cell_child[i] =
 				new_item.size();
 				new_item.push_back(
