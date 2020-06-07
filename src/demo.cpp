@@ -304,7 +304,7 @@ void testForRectMesh4D(std::ostream &fout, t_test_type type) {
 			fout << getProject(mesh, t_space<4, 3>()) << "\n\n";
 			break;
 		case SLICING:
-			fout << getSlice(mesh, t_space<4, 3>()) << "\n\n";
+			fout << getSection(mesh, t_space<4, 3>()) << "\n\n";
 			break;
 		}
 

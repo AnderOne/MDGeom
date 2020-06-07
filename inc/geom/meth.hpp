@@ -136,7 +136,7 @@ struct t_sect<N, M, N> {
 
 //Метод сечения подпространством:
 template <typename T, unsigned N, unsigned M>
-auto getSlice(const t_mesh<T, N, M> &_mesh, const t_basis<T, N, N - 1> &_basis) {
+auto getSection(const t_mesh<T, N, M> &_mesh, const t_basis<T, N, N - 1> &_basis) {
 
 	typedef t_mesh<T, N - 1, t_reduce<N, M>::dim> t_sliced_mesh;
 	typedef typename t_sliced_mesh::t_vert t_sliced_vert;
