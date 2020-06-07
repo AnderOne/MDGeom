@@ -17,9 +17,10 @@ enum t_cell_type {
 	SIMPLEX,
 	POLYTOP
 };
-enum t_test_type {
+enum t_test {
 	PROJECT,
-	SLICING
+	SLICING,
+	CUTTING
 };
 
 t_mesh_4d getRectMesh4D(t_cell_type type) {
@@ -273,23 +274,41 @@ void print(const t_mesh<T, N, 2> &mesh, std::ostream &out) {
 }
 
 
-void testForRectSurf3D(std::ostream &fout, t_cell_type type) {
+void testForRectSurf3D(std::ostream &fout, t_cell_type type, t_test test) {
 
 	const t_surf_3d mesh = getRectSurf3D(type);
-	print(mesh, std::cout);
-	fout << 1 << "\n\n";
-	fout << mesh;
+	//print(mesh, std::cout);
+	fout << 2 << "\n\n" << mesh << "\n\n";
+	switch (test) {
+	case CUTTING:
+		fout << getClipped(mesh, {0., 0., 0.}, {0., 0., 1.});
+		break;
+	case SLICING:
+		fout << getSection(mesh, t_plane_3d());
+		break;
+	default:
+		assert(false);
+	}
 }
 
-void testForRectMesh3D(std::ostream &fout, t_cell_type type) {
+void testForRectMesh3D(std::ostream &fout, t_cell_type type, t_test test) {
 
 	const t_mesh_3d mesh = getRectMesh3D(type);
-	print(mesh, std::cout);
-	fout << 1 << "\n\n";
-	fout << mesh;
+	//print(mesh, std::cout);
+	fout << 2 << "\n\n" << mesh << "\n\n";
+	switch (test) {
+	case CUTTING:
+		fout << getClipped(mesh, {0., 0., 0.}, {0., 0., 1.});
+		break;
+	case SLICING:
+		fout << getSection(mesh, t_plane_3d());
+		break;
+	default:
+		assert(false);
+	}
 }
 
-void testForRectMesh4D(std::ostream &fout, t_test_type type) {
+void testForRectMesh4D(std::ostream &fout, t_test test) {
 
 	t_mesh_4d mesh = getRectMesh4D(POLYTOP);
 
@@ -299,13 +318,15 @@ void testForRectMesh4D(std::ostream &fout, t_test_type type) {
 		std::cout << ":: " << t;
 		std::cout << std::endl;
 
-		switch (type) {
+		switch (test) {
 		case PROJECT:
 			fout << getProject(mesh, t_space<4, 3>()) << "\n\n";
 			break;
 		case SLICING:
 			fout << getSection(mesh, t_space<4, 3>()) << "\n\n";
 			break;
+		default:
+			assert(false);
 		}
 
 		mesh.rot(0, 3, M_PI / (2 * n));
@@ -324,10 +345,14 @@ int main() {
 	std::ofstream fout("test.txt");
 	fout << std::setprecision(5);
 	fout << std::scientific;
-	//testForRectSurf3D(fout, SIMPLEX);
-	//testForRectSurf3D(fout, POLYTOP);
-	//testForRectMesh3D(fout, SIMPLEX);
-	//testForRectMesh3D(fout, POLYTOP);
+	//testForRectSurf3D(fout, SIMPLEX, CUTTING);
+	//testForRectSurf3D(fout, SIMPLEX, SLICING);
+	//testForRectSurf3D(fout, POLYTOP, CUTTING);
+	//testForRectSurf3D(fout, POLYTOP, SLICING);
+	//testForRectMesh3D(fout, SIMPLEX, CUTTING);
+	//testForRectMesh3D(fout, SIMPLEX, SLICING);
+	//testForRectMesh3D(fout, POLYTOP, CUTTING);
+	//testForRectMesh3D(fout, POLYTOP, SLICING);
 	//testForRectMesh4D(fout, PROJECT);
 	testForRectMesh4D(fout, SLICING);
 
