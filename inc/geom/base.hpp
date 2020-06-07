@@ -282,7 +282,7 @@ struct t_basis {
 		t_basis<T, N, K> basis;
 		for (int i = 0; i < M; ++ i) { basis.vec[i] = vec[i]; }
 		basis.top = top;
-		for (int k = M, i = 0; (k < N + K) && (i < N); ++ i) {
+		for (int k = M, i = 0; (k < K) && (i < N); ++ i) {
 			basis.vec[k] = 0; basis.vec[k][i] = T(1);
 			if (basis.template ort<true>(k - 1)) {
 				++ k;
