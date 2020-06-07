@@ -228,6 +228,14 @@ auto getClipped(const t_mesh<T, N, M> &mesh, const t_vector<T, N> &center,
 		else
 		if ((old_vert_state[a] >= 0) &&
 		    (old_vert_state[b] >= 0)) {
+			//Случай, когда ребро одним концом касается гиперплоскости!
+			//Add new vert:
+			if (!old_vert_state[a] && old_vert_state[b]) {
+				new_edge_child[i] = old_vert_index[a];
+			}
+			if (!old_vert_state[b] && old_vert_state[a]) {
+				new_edge_child[i] = old_vert_index[b];
+			}
 			//Add new edge:
 			old_edge_index[i] = new_edge.size();
 			new_edge.push_back({
