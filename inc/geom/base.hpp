@@ -58,6 +58,14 @@ std::transform(\
 	}\
 );
 
+#define MATH_EPSILON (1.e-14)
+
+#ifndef MATH_TYPE
+#define MATH_TYPE double
+#endif
+
+//Forward declarations:
+
 template <typename T, unsigned N>
 struct t_vector;
 
@@ -68,7 +76,38 @@ template <typename T, unsigned N,
 unsigned M = N>
 struct t_basis;
 
-#define MATH_EPSILON (1.e-14)
+typedef t_matrix<MATH_TYPE, 4>
+t_matrix_4d;
+typedef t_matrix<MATH_TYPE, 3>
+t_matrix_3d;
+typedef t_matrix<MATH_TYPE, 2>
+t_matrix_2d;
+
+typedef t_vector<MATH_TYPE, 4>
+t_vector_4d;
+typedef t_vector<MATH_TYPE, 3>
+t_vector_3d;
+typedef t_vector<MATH_TYPE, 2>
+t_vector_2d;
+
+template <unsigned N, unsigned M = N> using t_space = t_basis<MATH_TYPE, N, M>;
+
+template <unsigned N> using t_plane = t_basis<MATH_TYPE, N, N - 1>;
+
+typedef t_plane<4>
+t_plane_4d;
+typedef t_plane<3>
+t_plane_3d;
+
+template <unsigned N> using t_line = t_basis<MATH_TYPE, N, 1>;
+
+typedef t_line<4>
+t_line_4d;
+typedef t_line<3>
+t_line_3d;
+typedef t_line<2>
+t_line_2d;
+
 
 //N-dimensional vector:
 template <typename T, unsigned N> struct t_vector {
@@ -434,29 +473,6 @@ std::ostream &operator<<(std::ostream &out, const t_vector<T, N> &vec) {
 #undef __DEF_BINARY_R
 #undef __DEF_BINARY_L
 #undef __DEF_UNARY
-
-//...
-
-typedef t_matrix<double, 4> t_matrix_4d;
-typedef t_matrix<double, 3> t_matrix_3d;
-typedef t_matrix<double, 2> t_matrix_2d;
-
-typedef t_vector<double, 4> t_vector_4d;
-typedef t_vector<double, 3> t_vector_3d;
-typedef t_vector<double, 2> t_vector_2d;
-
-template <unsigned N, unsigned M = N> using t_space = t_basis<double, N, M>;
-
-template <unsigned N> using t_plane = t_basis<double, N, N - 1>;
-
-typedef t_plane<4> t_plane_4d;
-typedef t_plane<3> t_plane_3d;
-
-template <unsigned N> using t_line = t_basis<double, N, 1>;
-
-typedef t_line<4> t_line_4d;
-typedef t_line<3> t_line_3d;
-typedef t_line<2> t_line_2d;
 
 //...
 

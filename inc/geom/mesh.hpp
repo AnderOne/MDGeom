@@ -66,11 +66,27 @@ template <typename T, unsigned N, unsigned M, unsigned K>
 struct t_link;
 template <typename T, unsigned N, unsigned M, unsigned K>
 struct t_part;
-template <typename T, unsigned N, unsigned M>
+template <typename T, unsigned N, unsigned M = N>
 struct t_mesh;
-
 template <unsigned N>
 struct t_grid;
+
+typedef t_mesh<MATH_TYPE, 4>
+t_mesh_4d;
+typedef t_mesh<MATH_TYPE, 3>
+t_mesh_3d;
+typedef t_mesh<MATH_TYPE, 2>
+t_mesh_2d;
+
+template <unsigned N>
+using t_surf =
+t_mesh<MATH_TYPE, N, N - 1>;
+
+typedef t_surf<4>
+t_surf_4d;
+typedef t_surf<3>
+t_surf_3d;
+
 
 //Handler classes:
 template <unsigned N,
@@ -396,7 +412,7 @@ private:
 };
 
 //Mesh structures:
-template <typename T, unsigned N, unsigned M = N> struct t_mesh {
+template <typename T, unsigned N, unsigned M> struct t_mesh {
 
 	template<unsigned K> using t_iter = MESH::t_iter<T, N, M, K>;
 	template<unsigned K> using t_link = MESH::t_link<T, N, M, K>;
@@ -487,23 +503,6 @@ private:
 
 	t_data DATA;
 };
-
-//...
-
-typedef t_mesh<double, 4>
-t_mesh_4d;
-typedef t_mesh<double, 3>
-t_mesh_3d;
-typedef t_mesh<double, 2>
-t_mesh_2d;
-
-template <unsigned N>
-using t_surf = t_mesh<double, N, N - 1>;
-
-typedef t_surf<4>
-t_surf_4d;
-typedef t_surf<3>
-t_surf_3d;
 
 //...
 
