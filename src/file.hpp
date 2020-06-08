@@ -19,8 +19,8 @@
 **/
 
 #pragma once
-#include "base.hpp"
-#include "mesh.hpp"
+#include <geom/base.hpp>
+#include <geom/mesh.hpp>
 #include <ostream>
 
 namespace GEOM {
