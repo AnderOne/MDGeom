@@ -30,4 +30,16 @@ target_link_libraries(
 test_cpp ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
 )
 
+add_custom_target(
+test_run COMMAND test_cpp
+--result_code=0
+--report_level=short
+--log_level=message
+--color_output=1
+
+DEPENDS test_cpp
+
+VERBATIM
+)
+
 endif()
