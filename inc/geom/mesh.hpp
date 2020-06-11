@@ -441,9 +441,9 @@ template <typename T, unsigned N, unsigned M> struct t_mesh {
 	t_mesh() {}
 
 	//Data transform:
-	template <typename ... TT> void ref(TT ... args) { update(); for (auto &v : *DATA.VERT) v = v.ref(args ...); }
-	template <typename ... TT> void rot(TT ... args) { update(); for (auto &v : *DATA.VERT) v = v.rot(args ...); }
-	void mov(const t_vector<T, N> &dir) { update(); for (auto &v : *DATA.VERT) v = v.mov(dir); }
+	template <typename ... TT> t_mesh ref(TT ... args) const { return t_mesh(DATA, [&](const auto &v) { return v.ref(args ...); }); }
+	template <typename ... TT> t_mesh rot(TT ... args) const { return t_mesh(DATA, [&](const auto &v) { return v.rot(args ...); }); }
+	t_mesh mov(const t_vector<T, N> &dir) const { return t_mesh(DATA, [&](const auto &v) { return v.mov(dir); }); }
 
 	//Data access:
 	template <unsigned I> const std::vector<std::vector<int>> &link() const { return DATA.GRID->GRID.template link<I>(); }
@@ -485,11 +485,14 @@ private:
 		std::shared_ptr<t_grid> GRID;
 	};
 
-	void update() {
-		if (!DATA.VERT.unique()) {
-		DATA.VERT = std::make_shared<std::vector<
-		t_vert>>(*DATA.VERT);
-		}
+	t_mesh(const t_data &data, auto &&func) {
+		DATA.VERT = std::make_shared<
+		    std::vector<t_vert>>(data.VERT->size());
+		DATA.GRID = data.GRID;
+		std::transform(
+		data.VERT->begin(), data.VERT->end(),
+		DATA.VERT->begin(), func
+		);
 	}
 
 	void init() {
