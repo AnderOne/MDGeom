@@ -69,19 +69,9 @@ std::transform(\
 template <typename T, unsigned N>
 struct t_vector;
 
-template <typename T, unsigned N>
-struct t_matrix;
-
 template <typename T, unsigned N,
 unsigned M = N>
 struct t_basis;
-
-typedef t_matrix<MATH_TYPE, 4>
-t_matrix_4d;
-typedef t_matrix<MATH_TYPE, 3>
-t_matrix_3d;
-typedef t_matrix<MATH_TYPE, 2>
-t_matrix_2d;
 
 typedef t_vector<MATH_TYPE, 4>
 t_vector_4d;
@@ -199,80 +189,6 @@ template <typename T, unsigned N> struct t_vector {
 
 private:
 	std::array<T, N> dat;
-};
-
-//Matrix of linear transformation:
-template <typename T, unsigned N> struct t_matrix {
-
-	typedef BASE::t_vector<T, N> t_vector;
-
-	__CHECK_TEMPLATE_POINT_TYPE(T)
-	__CHECK_TEMPLATE_POINT_DIM(N)
-
-	template <typename... TT, typename = typename std::enable_if<(sizeof...(TT) > 1)>::type>
-	inline t_matrix(TT... arg): dat{static_cast<T> (arg) ...} {
-		__CHECK_PARAMETER_PACK_SIZE(arg, N * N)
-	}
-	inline t_matrix(const T &val) { std::fill(dat.begin(), dat.end(), val); }
-	inline t_matrix() {}
-
-	template <typename ... TT,
-	          typename = typename std::enable_if<(sizeof ... (TT) == 0) && (N == 1)>::type>
-	inline operator T() const {
-		return dat[0];
-	}
-
-	//Get rotation matrix:
-	inline static t_matrix getRotation(int i, int j, const T &angle);
-	//Get identity matrix:
-	inline static t_matrix getIdentity();
-	//Inverse matrix:
-	inline t_matrix<T, N> inv() const;
-	//Determinant:
-	inline const T det() const;
-
-	//Matrix operations:
-	inline t_matrix mul(const t_matrix &rhs) const {
-		t_matrix ans(0);
-		for (int i = 0; i < N; ++ i) for (int j = 0; j < N; ++ j) for (int k = 0; k < N; ++ k) ans[i][j] += dat[i][k] * rhs.dat[k][j];
-		return ans;
-	}
-	inline t_vector mul(const t_vector &rhs) const {
-		t_vector ans(0);
-		for (int i = 0; i < N; ++ i) for (int k = 0; k < N; ++ k) ans[i] += dat[i][k] * rhs[k];
-		return ans;
-	}
-	inline t_matrix sub(const t_matrix &rhs) const { t_matrix ans; __DEF_TRANSFORM_2(ans, (*this), rhs, -); return ans; }
-	inline t_matrix add(const t_matrix &rhs) const { t_matrix ans; __DEF_TRANSFORM_2(ans, (*this), rhs, +); return ans; }
-
-	//Mixed operations:
-	inline t_matrix div(const T &val) const { t_matrix ans; __DEF_TRANSFORM_1(ans, (*this), val, /); return ans; }
-	inline t_matrix mul(const T &val) const { t_matrix ans; __DEF_TRANSFORM_1(ans, (*this), val, *); return ans; }
-	inline t_matrix sub(const T &val) const { t_matrix ans; __DEF_TRANSFORM_1(ans, (*this), val, -); return ans; }
-	inline t_matrix add(const T &val) const { t_matrix ans; __DEF_TRANSFORM_1(ans, (*this), val, +); return ans; }
-	inline t_matrix neg() const { t_matrix ans; __DEF_TRANSFORM_1(ans, (*this), -1, *); return ans; }
-
-	//Comparison:
-	inline bool operator != (const t_matrix &rhs) const { return !std::equal(dat.begin(), dat.end(), rhs.dat.begin()); }
-	inline bool operator == (const t_matrix &rhs) const { return std::equal(dat.begin(), dat.end(), rhs.dat.begin()); }
-
-	//Assignment:
-	inline t_matrix &operator+=(const t_matrix &rhs) { *this = this->add(rhs); return *this; }
-	inline t_matrix &operator-=(const t_matrix &rhs) { *this = this->sub(rhs); return *this; }
-	inline t_matrix &operator*=(const T &val) { *this = this->mul(val); return *this; }
-	inline t_matrix &operator/=(const T &val) { *this = this->div(val); return *this; }
-
-	//Data access:
-	inline const t_vector &operator[] (int i) const { return dat[i]; }
-	inline t_vector &operator[] (int i) { return dat[i]; }
-
-	const auto begin() const { return dat.begin(); }
-	const auto end() const { return dat.end(); }
-	auto begin() { return dat.begin(); }
-	auto end() { return dat.end(); }
-
-private:
-	std::array<t_vector, N> dat;
 };
 
 //Orthonormal basis of Affine space:
@@ -418,41 +334,22 @@ Q<T, N> operator C(const Q<T, N> &arg) { return arg.S(); }
 
 //...
 
-__DEF_BINARY_2(t_matrix, t_matrix, t_matrix, mul, *)
-__DEF_BINARY_2(t_vector, t_matrix, t_vector, mul, *)
-
-__DEF_BINARY_2(t_matrix, t_matrix, t_matrix, sub, -)
-__DEF_BINARY_2(t_matrix, t_matrix, t_matrix, add, +)
 __DEF_BINARY_2(t_vector, t_vector, t_vector, sub, -)
 __DEF_BINARY_2(t_vector, t_vector, t_vector, add, +)
 
 __DEF_BINARY_0(t_vector, t_vector, dot, *)
 
-__DEF_BINARY_R(t_matrix, t_matrix, div, /)
-__DEF_BINARY_R(t_matrix, t_matrix, mul, *)
-__DEF_BINARY_R(t_matrix, t_matrix, sub, -)
-__DEF_BINARY_R(t_matrix, t_matrix, add, +)
 __DEF_BINARY_R(t_vector, t_vector, div, /)
 __DEF_BINARY_R(t_vector, t_vector, mul, *)
 __DEF_BINARY_R(t_vector, t_vector, sub, -)
 __DEF_BINARY_R(t_vector, t_vector, add, +)
 
-__DEF_BINARY_L(t_matrix, t_matrix, mul, *)
-__DEF_BINARY_L(t_matrix, t_matrix, add, +)
 __DEF_BINARY_L(t_vector, t_vector, mul, *)
 __DEF_BINARY_L(t_vector, t_vector, add, +)
 
-__DEF_UNARY(t_matrix, neg, -)
 __DEF_UNARY(t_vector, neg, -)
 
 //...
-
-template <typename T, unsigned N>
-std::ostream &operator<<(std::ostream &out, const t_matrix<T, N> &mat) {
-	out << mat[0];
-	for (int i = 1; i < N; ++ i) out << "\n" << mat[i];
-	return out;
-}
 
 template <typename T, unsigned N>
 std::ostream &operator<<(std::ostream &out, const t_vector<T, N> &vec) {
