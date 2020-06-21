@@ -34,6 +34,7 @@ namespace MESH {
 template <typename T, unsigned N> using t_vert = t_vector<T, N>;
 
 //NOTE: Obtaining simplicial cells after such operations as slicing and etc. is very difficult for N-d case!
+//Therefore, we need to use arbitrary convex polytopes.
 template <unsigned N> struct t_item { typedef std::vector<int> t_type; };
 template <> struct t_item<1> { typedef std::array<int, 2> t_type; };
 
