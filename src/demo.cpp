@@ -330,14 +330,16 @@ void testForRectMesh4D(std::ostream &fout, t_test test) {
 			assert(false);
 		}
 
-		mesh = mesh.rot(0, 3, M_PI / (2 * n));
-		mesh = mesh.rot(1, 3, M_PI / (2 * n));
-		mesh = mesh.rot(2, 3, M_PI / (2 * n));
-		mesh = mesh.rot(0, 1, M_PI / (2 * n));
-		mesh = mesh.rot(0, 2, M_PI / (2 * n));
-		mesh = mesh.rot(1, 2, M_PI / (2 * n));
-		double s = 0.1 * sin(t * M_PI / (n / 10));
-		mesh = mesh.mov({0, s, -s, s});
+		const double h = M_PI / (2 * n);
+		const double s = 0.1 * sin(t * M_PI / (n / 10));
+		t_vector_4d v = {0, s, -s, s};
+		mesh = mesh.rot(0, 3, h).
+		            rot(1, 3, h).
+		            rot(2, 3, h).
+		            rot(0, 1, h).
+		            rot(0, 2, h).
+		            rot(1, 2, h).
+		            mov(v);
 	}
 }
 
