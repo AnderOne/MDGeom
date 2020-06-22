@@ -20,6 +20,7 @@
 
 #pragma once
 #include "base.hpp"
+#include "expr.hpp"
 #include <memory>
 #include <array>
 #include <vector>
@@ -422,7 +423,8 @@ template <typename T, unsigned N, unsigned M> struct t_mesh {
 
 	static_assert(N >= M, "Mesh dimension must not be more than space dimension!");
 
-	template <typename ... TT> t_mesh(const std::vector<t_vert> &vert, TT && ... args) {
+	template <typename ... TT> t_mesh(const std::vector<t_vert> &vert,
+		                              TT && ... args) {
 		DATA.VERT = std::make_shared<std::vector<t_vert>>(vert);
 		DATA.GRID = std::make_shared<t_grid>();
 		DATA.GRID->GRID = t_hand<M, 1>::make(
@@ -430,7 +432,8 @@ template <typename T, unsigned N, unsigned M> struct t_mesh {
 		init();
 	}
 
-	template <typename ... TT> t_mesh(std::vector<t_vert> &&vert, TT && ... args) {
+	template <typename ... TT> t_mesh(std::vector<t_vert> &&vert,
+		                              TT && ... args) {
 		DATA.VERT = std::make_shared<std::vector<t_vert>>(
 			std::move(vert));
 		DATA.GRID = std::make_shared<t_grid>();
@@ -441,10 +444,14 @@ template <typename T, unsigned N, unsigned M> struct t_mesh {
 
 	t_mesh() {}
 
+private:
+	template <typename E> struct t_expr;
+
+public:
 	//Data transform:
-	template <typename ... TT> t_mesh ref(TT ... args) const { return t_mesh(DATA, [&](const auto &v) { return v.ref(args ...); }); }
-	template <typename ... TT> t_mesh rot(TT ... args) const { return t_mesh(DATA, [&](const auto &v) { return v.rot(args ...); }); }
-	t_mesh mov(const t_vector<T, N> &dir) const { return t_mesh(DATA, [&](const auto &v) { return v.mov(dir); }); }
+	template <typename ... TT> auto ref(const TT & ... args) const { return t_expr<EXPR::t_expr<T, N>>(DATA).ref(args ...); }
+	template <typename ... TT> auto rot(const TT & ... args) const { return t_expr<EXPR::t_expr<T, N>>(DATA).rot(args ...); }
+	auto mov(const t_vector<T, N> &dir) const { return t_expr<EXPR::t_expr<T, N>>(DATA).mov(dir); }
 
 	//Data access:
 	template <unsigned I> const std::vector<std::vector<int>> &link() const { return DATA.GRID->GRID.template link<I>(); }
@@ -473,17 +480,45 @@ template <typename T, unsigned N, unsigned M> struct t_mesh {
 	}
 
 private:
+	struct t_grid { MESH::t_grid<M> GRID; std::vector<int> ITEM; };
+
+	struct t_data {
+		std::shared_ptr<std::vector<t_vert>> VERT;
+		std::shared_ptr<t_grid> GRID;
+	};
+
 	template <typename _T, unsigned _N, unsigned _M>
 	friend struct MESH::t_iter;
 	template <typename _T, unsigned _N, unsigned _M>
 	friend struct MESH::t_link;
 	template <typename _T, unsigned _N, unsigned _M>
 	friend struct MESH::t_part;
+	template <typename _E>
+	friend struct t_expr;
 
-	struct t_grid { MESH::t_grid<M> GRID; std::vector<int> ITEM; };
-	struct t_data {
-		std::shared_ptr<std::vector<t_vert>> VERT;
-		std::shared_ptr<t_grid> GRID;
+	template <typename E>
+	struct t_expr {
+
+		template <typename ... TT> auto ref(TT && ... args) const {
+			return t_expr<decltype(_expr.ref(args ...))>(_data, _expr.ref(std::forward<TT>(args) ...));
+		}
+		template <typename ... TT> auto rot(TT && ... args) const {
+			return t_expr<decltype(_expr.rot(args ...))>(_data, _expr.rot(std::forward<TT>(args) ...));
+		}
+		template <typename ... TT> auto mov(TT && ... args) const {
+			return t_expr<decltype(_expr.mov(args ...))>(_data, _expr.mov(std::forward<TT>(args) ...));
+		}
+
+		operator t_mesh() const { return t_mesh(_data, _expr); }
+
+	private:
+		t_expr(const t_data &data, const E &expr):
+		       _data(data), _expr(expr) {}
+		t_expr(const t_data &data):
+		       _data(data) {}
+		t_data _data;
+		E _expr;
+		friend struct t_mesh;
 	};
 
 	t_mesh(const t_data &data, auto &&func) {

@@ -125,8 +125,7 @@ template <typename T, unsigned N> struct t_vector {
 	}
 
 	inline t_vector ref(const t_basis<T, N, N - 1> &basis) const {
-		t_basis<T, N, N> extBasis = basis.template ext<N>();
-		const auto &normal = extBasis[N - 1];
+		const auto &normal = basis.template ext<N>()[N - 1];
 		return ref(basis.center(), normal);
 	}
 

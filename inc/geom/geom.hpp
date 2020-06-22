@@ -20,5 +20,6 @@
 
 #pragma once
 #include "base.hpp"
+#include "expr.hpp"
 #include "mesh.hpp"
 #include "meth.hpp"
