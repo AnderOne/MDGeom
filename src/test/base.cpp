@@ -145,3 +145,120 @@ BOOST_AUTO_TEST_CASE(test_constructor, *boost::unit_test::tolerance(MATH_EPSILON
 //...
 
 BOOST_AUTO_TEST_SUITE_END()
+
+//...
+
+BOOST_AUTO_TEST_SUITE(suite_vector_transform_tests)
+
+BOOST_AUTO_TEST_CASE(test_transform, *boost::unit_test::tolerance(MATH_EPSILON)) {
+
+	using namespace GEOM::BASE;
+
+	BOOST_TEST_MESSAGE("Testing vector transformations");
+
+	//Reflection by center with normal
+	{
+	t_vector<double, 3> center{-2., +3., +1.};
+	t_vector<double, 3> normal{+0., +0., +1.};
+	t_vector<double, 3> v0{+1., +2., +3.};
+	t_vector<double, 3> v1{+1., +2., -1.};
+
+	BOOST_TEST_VEC(v0.ref(center, normal), v1);
+	}
+
+	//Reflection about plane
+	{
+	t_basis<double, 3, 2> basis{
+		t_vector<double, 3> {-2., +3., +1.},
+		t_vector<double, 3> {+1., +0., +0.},
+		t_vector<double, 3> {+0., +1., +0.},
+	};
+	t_vector<double, 3> v0{+1., +2., +3.};
+	t_vector<double, 3> v1{+1., +2., -1.};
+
+	BOOST_TEST_VEC(v0.ref(basis), v1);
+	}
+
+	//Rotation in basis
+	{
+	t_basis<double, 3> basis{
+		t_vector<double, 3> {-2., +3., +1.},
+		t_vector<double, 3> {+0., +1., +0.},
+		t_vector<double, 3> {+0., +0., +1.},
+		t_vector<double, 3> {+1., +0., +0.}
+	};
+	t_vector<double, 3>
+	v0{+1., +2., +3.};
+	t_vector<double, 3>
+	v1{+1., +1., +0.};
+	t_vector<double, 3>
+	v2{-3., +0., +3.};
+	t_vector<double, 3>
+	v3{+0., +2., -2.};
+
+	BOOST_TEST_VEC(
+	v0.rot(basis, 0, 1, M_PI / 2), v1);
+	BOOST_TEST_VEC(
+	v0.rot(basis, 0, 2, M_PI / 2), v2);
+	BOOST_TEST_VEC(
+	v0.rot(basis, 1, 2, M_PI / 2), v3);
+	}
+
+	//Rotation around center
+	{
+	t_vector<double, 3>
+	c0{-2., +3., +1.};
+	t_vector<double, 3>
+	v0{+1., +2., +3.};
+	t_vector<double, 3>
+	v1{-1., +6., +3.};
+	t_vector<double, 3>
+	v2{-4., +2., +4.};
+	t_vector<double, 3>
+	v3{+1., +1., +0.};
+
+	BOOST_TEST_VEC(
+	v0.rot(c0, 0, 1, M_PI / 2), v1);
+	BOOST_TEST_VEC(
+	v0.rot(c0, 0, 2, M_PI / 2), v2);
+	BOOST_TEST_VEC(
+	v0.rot(c0, 1, 2, M_PI / 2), v3);
+	}
+
+	//Rotation in default basis
+	{
+	t_vector<double, 3>
+	v0{+1., +2., +3.};
+	t_vector<double, 3>
+	v1{-2., +1., +3.};
+	t_vector<double, 3>
+	v2{-3., +2., +1.};
+	t_vector<double, 3>
+	v3{+1., -3., +2.};
+
+	BOOST_TEST_VEC(
+	v0.rot(0, 1, M_PI / 2), v1);
+	BOOST_TEST_VEC(
+	v0.rot(0, 2, M_PI / 2), v2);
+	BOOST_TEST_VEC(
+	v0.rot(1, 2, M_PI / 2), v3);
+	}
+
+	//Moving
+	{
+	t_vector<double, 3>
+	v1{+1., +2., +2.};
+	t_vector<double, 3>
+	v2{+1., -1., -3.};
+	t_vector<double, 3>
+	v3{+2., +1., -1.};
+
+	BOOST_TEST_VEC(
+	v1.mov(v2), v3);
+	}
+
+}
+
+//...
+
+BOOST_AUTO_TEST_SUITE_END()
