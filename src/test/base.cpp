@@ -1,6 +1,6 @@
 #include <boost/test/unit_test.hpp>
 #include <geom/base.hpp>
-
+#include <geom/expr.hpp>
 
 #define BOOST_TEST_VEC(_v1_expr, _v2_expr) {\
 const auto _v1 = _v1_expr, _v2 = _v2_expr;\
@@ -13,7 +13,6 @@ BOOST_TEST(*it1 == *it2);\
 const auto _v1 = _v1_expr, _v2 = _v2_expr;\
 BOOST_TEST(_v1 == _v2);\
 }
-
 
 BOOST_AUTO_TEST_SUITE(suite_of_vector_tests)
 
@@ -87,8 +86,6 @@ BOOST_AUTO_TEST_CASE(test_math, *boost::unit_test::tolerance(MATH_EPSILON)) {
 
 }
 
-//...
-
 BOOST_AUTO_TEST_SUITE_END()
 
 //...
@@ -141,8 +138,6 @@ BOOST_AUTO_TEST_CASE(test_constructor, *boost::unit_test::tolerance(MATH_EPSILON
 	BOOST_TEST_VEC(b1[2], v3);
 
 }
-
-//...
 
 BOOST_AUTO_TEST_SUITE_END()
 
@@ -259,6 +254,52 @@ BOOST_AUTO_TEST_CASE(test_transform, *boost::unit_test::tolerance(MATH_EPSILON))
 
 }
 
+BOOST_AUTO_TEST_SUITE_END()
+
 //...
+
+BOOST_AUTO_TEST_SUITE(suite_vector_expression_tests)
+
+BOOST_AUTO_TEST_CASE(test_expression, *boost::unit_test::tolerance(MATH_EPSILON)) {
+
+	using namespace GEOM::BASE;
+	using namespace GEOM::EXPR;
+
+	BOOST_TEST_MESSAGE("Testing vector expressions");
+
+	t_vector<double, 3> offset{+1., -2., +3.};
+	t_vector<double, 3> center{-3., +2., -1.};
+	t_vector<double, 3> normal{+1., -1., -1.};
+	t_basis<double, 3, 2> plane{
+		t_vector<double, 3> {+0., +0., +0.},
+		t_vector<double, 3> {+1., +1., +1.},
+		t_vector<double, 3> {+0., -1., +1.}
+	};
+	t_basis<double, 3> basis{
+		t_vector<double, 3> {-1., -2., -3.},
+		t_vector<double, 3> {+0., +1., +1.},
+		t_vector<double, 3> {+0., -1., +1.},
+		t_vector<double, 3> {+1., +0., +0.}
+	};
+
+	t_vector<double, 3> v0{+1., +2., +3.};
+
+	#define TEST_EXPR(_v) \
+	_v.mov(offset).\
+	rot(center, 0, 1, M_PI / 2).\
+	rot(basis, 1, 2, M_PI / 2).\
+	rot(2, 0, M_PI / 2).\
+	ref(center, normal).\
+	ref(plane)
+
+	auto e1 = t_expr<double, 3>();
+	auto v1 = TEST_EXPR(v0);
+
+	BOOST_TEST_VEC(
+	v1, TEST_EXPR(e1)(v0)
+	);
+
+	#undef TEST_EXPR
+}
 
 BOOST_AUTO_TEST_SUITE_END()
