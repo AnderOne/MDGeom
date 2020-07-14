@@ -4,14 +4,15 @@
 BOOST_AUTO_TEST_SUITE(suite_of_mesh_tests)
 
 template <typename T>
-static void get_link(std::vector<std::vector<int>> &link, const std::vector<T> &item) {
-	link.clear();
+static std::vector<std::vector<int>> get_link(const std::vector<T> &item) {
+	std::vector<std::vector<int>> link;
 	for (int i = 0; i < item.size(); ++ i) for (int k: item[i]) {
 		if (link.size() <= k) {
 			link.resize(k + 1);
 		}
 		link[k].push_back(i);
 	}
+	return link;
 }
 
 BOOST_AUTO_TEST_CASE(test_constructor) {
@@ -54,13 +55,9 @@ BOOST_AUTO_TEST_CASE(test_constructor) {
 		BOOST_TEST(mesh.body() == body);
 
 		//Check for link indices
-		std::vector<std::vector<int>> link;
-		get_link(link, mesh.cell<1>());
-		BOOST_TEST(mesh.link<0>() == link);
-		get_link(link, mesh.cell<2>());
-		BOOST_TEST(mesh.link<1>() == link);
-		get_link(link, mesh.cell<3>());
-		BOOST_TEST(mesh.link<2>() == link);
+		BOOST_TEST(mesh.link<0>() == get_link(mesh.cell<1>()));
+		BOOST_TEST(mesh.link<1>() == get_link(mesh.cell<2>()));
+		BOOST_TEST(mesh.link<2>() == get_link(mesh.cell<3>()));
 	}
 	{
 		std::vector<t_mesh<double, 3, 2>::t_vert> vert{
@@ -87,11 +84,8 @@ BOOST_AUTO_TEST_CASE(test_constructor) {
 		BOOST_TEST(mesh.face() == face);
 
 		//Check for link indices
-		std::vector<std::vector<int>> link;
-		get_link(link, mesh.cell<1>());
-		BOOST_TEST(mesh.link<0>() == link);
-		get_link(link, mesh.cell<2>());
-		BOOST_TEST(mesh.link<1>() == link);
+		BOOST_TEST(mesh.link<0>() == get_link(mesh.cell<1>()));
+		BOOST_TEST(mesh.link<1>() == get_link(mesh.cell<2>()));
 	}
 	{
 		std::vector<t_mesh<double, 1, 1>::t_vert> vert{{0}, {1}, {2}};
@@ -103,11 +97,7 @@ BOOST_AUTO_TEST_CASE(test_constructor) {
 		BOOST_TEST(mesh.edge() == edge);
 
 		//Check for link indices
-		std::vector<std::vector<int>> link;
-		get_link(link, mesh.cell<1>());
-		BOOST_TEST(
-		mesh.link<0>() == link
-		);
+		BOOST_TEST(mesh.link<0>() == get_link(mesh.cell<1>()));
 	}
 
 	//...
