@@ -94,6 +94,8 @@ private:
 		);
 	}
 
+	t_tree(const t_tree &) = delete;
+
 	std::unique_ptr<t_node> ROOT;
 	const t_vert *VERT;
 };
