@@ -21,6 +21,7 @@
 #pragma once
 #include "base.hpp"
 #include "expr.hpp"
+#include "tree.hpp"
 #include <memory>
 #include <array>
 #include <vector>
@@ -420,11 +421,12 @@ template <typename T, unsigned N, unsigned M> struct t_mesh {
 	template<unsigned K> using t_link = MESH::t_link<T, N, M, K>;
 	template<unsigned K> using t_part = MESH::t_part<T, N, M, K>;
 	typedef MESH::t_vert<T, N> t_vert;
+	typedef TREE::t_tree<T, N> t_tree;
 
 	static_assert(N >= M, "Mesh dimension must not be more than space dimension!");
 
 	template <typename ... TT> t_mesh(const std::vector<t_vert> &vert,
-		                              TT && ... args) {
+	                                  TT && ... args) {
 		DATA.VERT = std::make_shared<std::vector<t_vert>>(vert);
 		DATA.GRID = std::make_shared<t_grid>();
 		DATA.GRID->GRID = t_hand<M, 1>::make(
@@ -433,7 +435,7 @@ template <typename T, unsigned N, unsigned M> struct t_mesh {
 	}
 
 	template <typename ... TT> t_mesh(std::vector<t_vert> &&vert,
-		                              TT && ... args) {
+	                                  TT && ... args) {
 		DATA.VERT = std::make_shared<std::vector<t_vert>>(
 			std::move(vert));
 		DATA.GRID = std::make_shared<t_grid>();
@@ -471,6 +473,13 @@ public:
 
 	const MESH::t_grid<M> &grid() const { return DATA.GRID->GRID; }
 
+	const t_tree &tree() const {
+	if (DATA.TREE == nullptr) {
+	    DATA.TREE = std::make_shared<t_tree>(DATA.VERT->data(), DATA.VERT->size());
+	}
+	return *DATA.TREE;
+	}
+
 	t_iter<M> begin() const {
 		return t_iter<M>(*this, DATA.GRID->ITEM.data(), 0);
 	}
@@ -485,6 +494,7 @@ private:
 	struct t_data {
 		std::shared_ptr<std::vector<t_vert>> VERT;
 		std::shared_ptr<t_grid> GRID;
+		std::shared_ptr<t_tree> TREE;
 	};
 
 	template <typename _T, unsigned _N, unsigned _M>
@@ -540,7 +550,7 @@ private:
 		0);
 	}
 
-	t_data DATA;
+	mutable t_data DATA;
 };
 
 //...
