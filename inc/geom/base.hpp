@@ -372,6 +372,13 @@ std::ostream &operator<<(std::ostream &out, const t_vector<T, N> &vec) {
 
 //...
 
+template <typename T, unsigned N>
+struct t_rect {
+	t_vector<T, N> min, max;
+};
+
+//...
+
 }//BASE
 
 }//GEOM

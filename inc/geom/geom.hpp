@@ -21,5 +21,6 @@
 #pragma once
 #include "base.hpp"
 #include "expr.hpp"
+#include "tree.hpp"
 #include "mesh.hpp"
 #include "meth.hpp"
