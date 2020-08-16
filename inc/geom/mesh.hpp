@@ -90,6 +90,12 @@ t_surf_4d;
 typedef t_surf<3>
 t_surf_3d;
 
+template <unsigned N>
+using t_poly =
+t_mesh<MATH_TYPE, N, 1>;
+
+typedef t_poly<2>
+t_poly_2d;
 
 //Handler classes:
 template <unsigned N,
