@@ -95,6 +95,7 @@ if (false)
 		end
 end
 		title(['time: ', num2str(t), '/', num2str(tnum)]);
+		if (mdim(1) < 3); view([0, 90]); end
 		if (lim)
 			axis([xmin, xmax, ymin, ymax, xmin, zmax]);
 		else
