@@ -23,4 +23,5 @@
 #include "expr.hpp"
 #include "tree.hpp"
 #include "mesh.hpp"
+#include "test.hpp"
 #include "meth.hpp"
