@@ -37,7 +37,7 @@ template<typename T, unsigned N> struct t_tree {
 	typedef BASE::t_vector<T, N> t_vert;
 	typedef BASE::t_rect<T, N> t_rect;
 
-	std::vector<const t_vert *> find(const t_rect &_rect) const { std::vector<const t_vert *> LIST; find(LIST, ROOT.get(), _rect, 0); return LIST; }
+	std::vector<ptrdiff_t> find(const t_rect &_rect) const { std::vector<ptrdiff_t> LIST; find(LIST, ROOT.get(), _rect, 0); return LIST; }
 
 	explicit t_tree(const t_vert *_vert, size_t _num): VERT(_vert), ROOT(build(const_cast<t_vert *> (_vert), _num)) {}
 
@@ -51,7 +51,7 @@ private:
 		const t_vert *VERT;
 	};
 
-	void find(std::vector<const t_vert *> &list, t_node *node, const t_rect &rect, int step) const {
+	void find(std::vector<ptrdiff_t> &list, t_node *node, const t_rect &rect, int step) const {
 
 		if (node) {
 			const auto *vert = (node->VERT); size_t next = ((step < N - 1)? (step + 1): 0);
@@ -59,7 +59,7 @@ private:
 			for (int i = 0; i < N; ++ i) {
 				test[i] = ((*vert)[i] >= rect.min[i]) | (((*vert)[i] <= rect.max[i]) << 1);
 			}
-			if (std::count(test.begin(), test.end(), 3) == N) { list.push_back(vert); }
+			if (std::count(test.begin(), test.end(), 3) == N) list.push_back(vert - VERT);
 			if (test[step] & 2) {
 				find(list, node->NODE[1], rect, next);
 			}
