@@ -357,6 +357,12 @@ std::ostream &operator<<(std::ostream &out, const t_vector<T, N> &vec) {
 	return out;
 }
 
+template <typename T, unsigned N>
+std::istream &operator>>(std::istream &inp, t_vector<T, N> &vec) {
+	for (int i = 0; i < N; ++ i) inp >> vec[i];
+	return inp;
+}
+
 //...
 
 #undef __CHECK_PARAMETER_PACK_SIZE
