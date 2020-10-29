@@ -94,14 +94,15 @@ if (false)
 			hold on
 		end
 end
-		title(['time: ', num2str(t), '/', num2str(tnum)]);
+		title(['step: ', num2str(t), '/', num2str(tnum)]);
 		if (mdim(1) < 3); view([0, 90]); end
 		if (lim)
 			axis([xmin, xmax, ymin, ymax, xmin, zmax]);
 		else
 			axis equal tight
 		end
-		mov = getframe();
+		grid on
+		mov = getframe(gcf);
 		if (gif)
 			[im, map] = rgb2ind(mov.cdata, 256);
 			if (t > tmin)
