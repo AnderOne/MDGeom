@@ -42,22 +42,6 @@ template <> struct t_item<1> { typedef std::array<int, 2> t_type; };
 
 template <unsigned N> using t_cell = typename t_item<N>::t_type;
 
-template <unsigned N> struct t_push {
-
-	void add(int val) { item.push_back(val); ++ pos; }
-
-	MESH::t_cell<N> item;
-	int pos = 0;
-};
-
-template <> struct t_push<1> {
-
-	void add(int val) { item[pos] = val; ++ pos; }
-
-	MESH::t_cell<1> item;
-	int pos = 0;
-};
-
 typedef t_cell<3> t_body;
 typedef t_cell<2> t_face;
 typedef t_cell<1> t_edge;

@@ -54,13 +54,32 @@ auto getProject(const t_mesh<T, N, M> &mesh, const t_basis<T, N, N - 1> &basis) 
 	};
 }
 
-enum t_state { CROSS, LOWER, UPPER, INNER };
+
+template <unsigned N> struct t_push {
+
+	void add(int val) { item.push_back(val); ++ pos; }
+
+	MESH::t_cell<N> item;
+	int pos = 0;
+};
+
+template <> struct t_push<1> {
+
+	void add(int val) { item[pos] = val; ++ pos; }
+
+	MESH::t_cell<1> item;
+	int pos = 0;
+};
+
+enum class t_state { CROSS, LOWER, UPPER, INNER };
+
 typedef std::vector<int> t_child;
 
-template <unsigned N, unsigned M, unsigned K, bool IS_SLICE = false>
+template <unsigned N, unsigned M, unsigned K, bool SLICE_ONLY = false>
 struct t_sect_builder {
 
-	t_sect_builder(const t_grid<N> &_old_grid, t_grid<M> &_new_grid): old_grid(_old_grid), new_grid(_new_grid) {}
+	t_sect_builder(const t_grid<N> &_old_grid, t_grid<M> &_new_grid):
+	               old_grid(_old_grid), new_grid(_new_grid) {}
 
 	void make_new_item(const std::vector<t_state> &old_item_state,
 	                   const std::vector<t_child> &new_item_child,
@@ -77,28 +96,24 @@ struct t_sect_builder {
 			//Проверяем положение ячейки относительно подпространства:
 			size_t cross = 0, lower = 0, upper = 0, inner = 0;
 			for (int c: old_cell[i]) {
-				if (old_item_state[c] == CROSS) { ++ cross; }
-				if (old_item_state[c] == LOWER) { ++ lower; }
-				if (old_item_state[c] == UPPER) { ++ upper; }
-				if (old_item_state[c] == INNER) {
+				if (old_item_state[c] == t_state::CROSS) { ++ cross; }
+				if (old_item_state[c] == t_state::LOWER) { ++ lower; }
+				if (old_item_state[c] == t_state::UPPER) { ++ upper; }
+				if (old_item_state[c] == t_state::INNER) {
 					assert(new_item_index[c] != nullind);
 					new_cell_child[i].
 					push_back(new_item_index[c]);
 					++ inner;
 				}
 			}
-			if (inner == old_cell[i].size())
-				old_cell_state[i] = INNER;
+			if (inner == old_cell[i].size()) old_cell_state[i] = t_state::INNER;
 			else
-			if (cross || (upper && lower))
-				old_cell_state[i] = CROSS;
+			if (cross || (upper && lower)) old_cell_state[i] = t_state::CROSS;
 			else {
-				old_cell_state[i] =
-				lower?
-				LOWER: UPPER;
+				old_cell_state[i] = lower? t_state::LOWER: t_state::UPPER;
 			}
 
-			if (old_cell_state[i] != CROSS) continue;
+			if (old_cell_state[i] != t_state::CROSS) continue;
 
 			//Добавляем новую подъячейку:
 			std::set<int> item;
@@ -129,15 +144,16 @@ struct t_sect_builder {
 
 		for (int i = 0; i < old_cell.size(); ++ i) {
 
-			if (!IS_SLICE) {
-				if ((old_cell_state[i] != INNER) && (old_cell_state[i] != UPPER) && (old_cell_state[i] != CROSS)) continue;
+			if (!SLICE_ONLY) {
+				if ((old_cell_state[i] != t_state::INNER) && (old_cell_state[i] != t_state::UPPER) &&
+				    (old_cell_state[i] != t_state::CROSS)) continue;
 			}
 			else {
-				if (old_cell_state[i] != INNER) continue;
+				if (old_cell_state[i] != t_state::INNER) continue;
 			}
 
 			std::set<int> item;
-			if (!IS_SLICE) for (int k: new_cell_child[i]) item.insert(k);
+			if (!SLICE_ONLY) for (int k: new_cell_child[i]) item.insert(k);
 			for (int c: old_cell[i]) {
 			int k = new_item_index[c]; if (k != nullind) item.insert(k);
 			}
@@ -172,13 +188,13 @@ struct t_sect_builder {
 			old_cell_state, new_cell_child, new_cell_index
 		);
 		//Заполняем новые ячейки из подъячеек:
-		t_sect_builder<N, M, (K < M)? (K): (N), IS_SLICE>
+		t_sect_builder<N, M, (K < M)? (K): (N), SLICE_ONLY>
 		(old_grid, new_grid).make_new_cell(
 			old_item_state, new_item_child, new_item_index,
 			old_cell_state, new_cell_child, new_cell_index
 		);
 		//Вызываемся рекурсивно вверх:
-		t_sect_builder<N, M, K + 1, IS_SLICE>
+		t_sect_builder<N, M, K + 1, SLICE_ONLY>
 		(old_grid, new_grid).make(
 			old_cell_state, new_cell_child, new_cell_index
 		);
@@ -194,7 +210,8 @@ private:
 	t_grid<M> &new_grid;
 };
 
-template <unsigned N, unsigned M, bool IS_SLICE> struct t_sect_builder<N, M, N, IS_SLICE> {
+template <unsigned N, unsigned M, bool SLICE_ONLY>
+struct t_sect_builder<N, M, N, SLICE_ONLY> {
 
 	template <typename ... TT> t_sect_builder(TT ... args) {}
 	template <typename ... TT>
@@ -259,18 +276,18 @@ auto getClipped(const t_mesh<T, N, M> &mesh, const t_vector<T, N> &center,
 			new_edge_child[i].push_back(new_vert_index[b]);
 		}
 		if (old_vert_state[a] * old_vert_state[b] < 0)
-			old_edge_state[i] = CROSS;
+			old_edge_state[i] = t_state::CROSS;
 		else
 		if (old_vert_state[a] + old_vert_state[b] < 0)
-			old_edge_state[i] = LOWER;
+			old_edge_state[i] = t_state::LOWER;
 		else
 		if (old_vert_state[a] + old_vert_state[b] > 0)
-			old_edge_state[i] = UPPER;
+			old_edge_state[i] = t_state::UPPER;
 		else {
-			old_edge_state[i] = INNER;
+			old_edge_state[i] = t_state::INNER;
 		}
 
-		if (old_edge_state[i] == CROSS) {
+		if (old_edge_state[i] == t_state::CROSS) {
 			const auto &pa = old_vert[a], &pb = old_vert[b];
 			T p = - ((pa - center) * normal) /
 			        ((pb - pa) * normal);
@@ -289,8 +306,8 @@ auto getClipped(const t_mesh<T, N, M> &mesh, const t_vector<T, N> &center,
 			          new_vert.size() - 1;
 			new_edge.push_back({va, vb});
 		}
-		if (old_edge_state[i] == INNER ||
-		    old_edge_state[i] == UPPER) {
+		if (old_edge_state[i] == t_state::INNER ||
+		    old_edge_state[i] == t_state::UPPER) {
 			//Add new edge:
 			new_edge_index[i] = new_edge.size();
 			new_edge.push_back({
@@ -301,7 +318,7 @@ auto getClipped(const t_mesh<T, N, M> &mesh, const t_vector<T, N> &center,
 	}
 
 	//Вызываемся рекурсивно вверх:
-	t_sect_builder<M, M, 1>(old_grid, new_grid).make(
+	t_sect_builder<M, M, 1, false>(old_grid, new_grid).make(
 	old_edge_state, new_edge_child, new_edge_index
 	);
 
@@ -372,18 +389,18 @@ auto getSection(const t_mesh<T, N, M> &mesh, const t_basis<T, N, N - 1> &basis) 
 			new_edge_child[i].push_back(new_vert_index[b]);
 		}
 		if (old_vert_state[a] * old_vert_state[b] < 0)
-			old_edge_state[i] = CROSS;
+			old_edge_state[i] = t_state::CROSS;
 		else
 		if (old_vert_state[a] + old_vert_state[b] < 0)
-			old_edge_state[i] = LOWER;
+			old_edge_state[i] = t_state::LOWER;
 		else
 		if (old_vert_state[a] + old_vert_state[b] > 0)
-			old_edge_state[i] = UPPER;
+			old_edge_state[i] = t_state::UPPER;
 		else {
-			old_edge_state[i] = INNER;
+			old_edge_state[i] = t_state::INNER;
 		}
 
-		if (old_edge_state[i] == CROSS) {
+		if (old_edge_state[i] == t_state::CROSS) {
 			const auto &pa = old_vert[a], &pb = old_vert[b];
 			T p = - ((pa - center) * normal) /
 			        ((pb - pa) * normal);
@@ -393,7 +410,7 @@ auto getSection(const t_mesh<T, N, M> &mesh, const t_basis<T, N, N - 1> &basis) 
 			basis.put(pa + p * (pb - pa))
 			);
 		}
-		if (old_edge_state[i] == INNER) {
+		if (old_edge_state[i] == t_state::INNER) {
 			//Add new edge:
 			new_edge_index[i] = new_edge.size();
 			new_edge.push_back({
