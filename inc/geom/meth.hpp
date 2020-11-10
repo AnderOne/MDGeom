@@ -225,19 +225,20 @@ struct t_sect_builder<N, M, N, SLICE_ONLY> {
 template <typename T, unsigned N,
                       unsigned M>
 auto getClipped(const t_mesh<T, N, M> &mesh, const t_vector<T, N> &center,
-                                             const t_vector<T, N> &normal) {
+                                             const t_vector<T, N> &direct) {
 
 	//Разделяем вершины относительно подпространства:
 	const auto &old_vert = mesh.vert(); std::vector<t_vert<T, N>> new_vert;
 
 	std::vector<int> new_vert_index(old_vert.size(), nullind);
 	std::vector<int> old_vert_state(old_vert.size());
+	const auto &normal = direct / direct.len();
 
 	for (int i = 0; i < old_vert.size(); ++ i) {
 
 		const T p = (old_vert[i] - center) * normal;
 
-		if (p == 0) {
+		if (std::abs(p) < MATH_EPSILON) {
 			new_vert_index[i] = new_vert.size();
 			new_vert.push_back(old_vert[i]);
 			old_vert_state[i] = +0;
@@ -352,7 +353,7 @@ auto getSection(const t_mesh<T, N, M> &mesh, const t_basis<T, N, N - 1> &basis) 
 
 		const T p = (old_vert[i] - center) * normal;
 
-		if (p == 0) {
+		if (std::abs(p) < MATH_EPSILON) {
 			new_vert_index[i] = new_vert.size();
 			new_vert.push_back(
 				basis.put(old_vert[i])
