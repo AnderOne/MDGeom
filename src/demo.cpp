@@ -15,12 +15,6 @@ using namespace GEOM::METH;
 using namespace GEOM::FILE;
 using namespace GEOM;
 
-enum t_test {
-	PROJECT,
-	SLICING,
-	CUTTING
-};
-
 //Iteration over mesh elements:
 template <typename T, unsigned N>
 void print(const t_mesh<T, N, 3> &mesh, std::ostream &out) {
@@ -93,6 +87,12 @@ void print(const t_mesh<T, N, 2> &mesh, std::ostream &out) {
 //Test cases:
 
 namespace {
+
+enum t_test {
+	PROJECT,
+	SLICING,
+	CUTTING
+};
 
 const std::array<t_vector_3d, 2> center = {t_vector_3d{+0., +0., +0.}, t_vector_3d{+0., +0., +0.}};
 const std::array<t_vector_3d, 2> normal = {t_vector_3d{+0., +0., +1.}, t_vector_3d{-1., +1., +0.}};
